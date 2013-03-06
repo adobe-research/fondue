@@ -7,6 +7,11 @@ Rough around the edges. Especially edges not used in [Theseus](https://github.co
 
 Plain objects are returned from all API calls so that they can be easily passed over a remote debugging connection as JSON.
 
+Install
+-------
+
+    npm install fondue
+
 Usage
 -----
 
