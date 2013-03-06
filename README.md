@@ -15,7 +15,7 @@ Install
 Use
 ---
 
-Execute instrumented code:
+Execute instrumented code (instrumented code is also tested in Chrome):
 
 ````javascript
 var fondue = require('fondue'),
