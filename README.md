@@ -5,7 +5,7 @@ Pass in JavaScript source code, get a version of that code that's been instrumen
 
 Rough around the edges. Especially edges not used in [Theseus](https://github.com/adobe-research/theseus).
 
-Plain objects are returned from all API calls so that they can be easily passed over a remote debugging connection as JSON.
+Plain objects are returned from all API calls so that they can be easily passed around as JSON.
 
 Install
 -------
