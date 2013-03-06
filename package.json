@@ -1,0 +1,20 @@
+{
+	"name" : "fondue",
+	"description" : "rewrites JavaScript code to collect partial execution traces",
+	"license" : "MIT",
+	"author" : "Tom Lieber <tom@alltom.com>",
+	"version" : "0.1",
+	"main" : "./lib/fondue",
+	"repository" : {
+		"type" : "git",
+		"url" : "https://github.com/adobe-research/fondue.git"
+	},
+	"dependencies" : {
+		"falafel" : "0.1.4"
+	},
+	"keywords" : [
+		"source",
+		"trace",
+		"instrumentation"
+	]
+}
