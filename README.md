@@ -12,8 +12,8 @@ Install
 
     npm install fondue
 
-Usage
------
+Use
+---
 
 Execute instrumented code:
 
