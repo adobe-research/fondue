@@ -34,11 +34,11 @@ function wrap(src) {
 
 var marshalledGlobalObject = {
 	type: 'object',
-	preview: '[object Object]',
+	preview: '[Object]',
 	ownProperties: {
 		setTimeout: { type: 'function' },
-		console: { type: 'object', preview: '[object Object]' },
-		tracer: { type: 'object', preview: '[object Object]' }
+		console: { type: 'object', preview: '[Object]' },
+		tracer: { type: 'object', preview: '[Object]' }
 	},
 };
 
@@ -171,7 +171,7 @@ function test003() {
 
 	setTimeout(function () {
 		var marshalledTimer = { type: 'object',
-			preview: '[object Timer]',
+			preview: '[Object]',
 			ownProperties: {
 				_callback: { type: 'function' },
 				_onTimeout: { type: 'function' },
