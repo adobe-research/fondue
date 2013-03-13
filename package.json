@@ -3,7 +3,7 @@
 	"description" : "rewrites JavaScript code to collect partial execution traces",
 	"license" : "MIT",
 	"author" : "Tom Lieber <tom@alltom.com>",
-	"version" : "0.1.2",
+	"version" : "0.1.3",
 	"main" : "./lib/fondue",
 	"repository" : {
 		"type" : "git",
