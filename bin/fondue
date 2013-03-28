@@ -27,6 +27,7 @@
 if (process.argv.length <3) {
 	console.log('usage: fondue [file.js]');
 } else {
-	var src = require('fs').readFileSync(process.argv[2], { encoding: 'utf8' });
-	console.log(require('../lib/fondue').instrument(src));
+	var path = require('path').resolve(process.cwd(), process.argv[2]);
+	var src = require('fs').readFileSync(path, { encoding: 'utf8' });
+	console.log(require('../lib/fondue').instrument(src, { path: path }));
 }
