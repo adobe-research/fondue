@@ -1,4 +1,4 @@
 function foo() {
-	console.log("wat!");
 }
 foo();
+setTimeout(foo, 100);
