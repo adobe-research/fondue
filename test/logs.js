@@ -207,7 +207,7 @@ test('logs (parents)', function (t) {
 		parents: [{
 			invocationId: log[0].invocationId,
 			type: 'call',
-			inbetween: [/* TODO: expect a trace */],
+			inbetween: [],
 		}],
 	}]);
 
@@ -234,7 +234,7 @@ test('logs (console.log)', function (t) {
 		arguments: [{ value: { type: 'number', value: 1 } }],
 	}]);
 
-	// TODO: only return console.logs that are called directly
+	// only return console.logs that are called directly
 	// var handle2 = tracer.trackLogs({ ids: [aNode.id] });
 	// var log = tracer.logDelta(handle2, 2);
 	// t.equal(log.length, 1);
@@ -281,7 +281,3 @@ test('logs (async)', function (t) {
 
 	t.end();
 });
-
-// TODO: closure variables
-// TODO: trace points at beginning AND end of function
-// TODO: trace points for all expressions

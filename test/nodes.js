@@ -95,12 +95,7 @@ test('nodes', function (t) {
 		start: { line: 5, column: 0 },
 		end: { line: 5, column: 3 },
 		childrenIds: [],
-		// params: [], // TODO
 	});
-
-	// TODO: branches, loops, expressions, variable assignments
 
 	t.end();
 });
-
-// TODO: test function, callsite names

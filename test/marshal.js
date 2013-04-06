@@ -21,5 +21,3 @@
  * DEALINGS IN THE SOFTWARE.
  * 
  */
-
-// TODO: control how deeply to marshal values
