@@ -27,11 +27,12 @@ var output = vm.runInNewContext(src, sandbox);
 var tracer = sandbox.tracer; // created by fondue when instrumented code is run
 ````
 
-Get all trace points (functions, call sites, etc):
+Track trace points (functions, call sites, etc):
 
 ````javascript
 var functions = {};
-tracer.nodes().forEach(function (n) {
+var nodesHandle = tracer.trackNodes();
+tracer.newNodes(nodesHandle).forEach(function (n) {
 	if (n.type === 'function') {
 		functions[n.name] = n;
 	}
@@ -39,6 +40,8 @@ tracer.nodes().forEach(function (n) {
 
 var fooNode = functions['foo'];
 console.log('foo started at', fooNode.start, 'and ended at', fooNode.end);
+
+// call tracer.newNodes() periodically if you expect new code to be required over time
 ````
 
 Track hit counts:
