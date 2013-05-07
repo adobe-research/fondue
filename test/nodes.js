@@ -31,7 +31,7 @@ test('nodes', function (t) {
 	var tracer = o.tracer;
 
 	var nodes = tracer.nodes();
-	t.equal(nodes.length, 5);
+	t.equal(nodes.length, 10);
 
 	var nodeWithId = function (id) {
 		return nodes.filter(function (n) { return n.id === id })[0];
@@ -89,6 +89,24 @@ test('nodes', function (t) {
 		childrenIds: [],
 		params: [],
 	});
+
+	t.similar(nodeWithTypeName('function', "('a' callback)"), {
+		id: 'scripts/nodes.js-6-2-6-17',
+		start: { line: 6, column: 2 },
+		end: { line: 6, column: 17 },
+		childrenIds: [],
+		params: [],
+	});
+
+	t.similar(nodeWithTypeName('function', "('y' callback)"), {
+		id: 'scripts/nodes.js-9-4-9-19',
+		start: { line: 9, column: 4 },
+		end: { line: 9, column: 19 },
+		childrenIds: [],
+		params: [],
+	});
+
+	// call site
 
 	t.similar(nodeWithTypeName('callsite', 'a'), {
 		id: 'scripts/nodes.js-5-0-5-3',
