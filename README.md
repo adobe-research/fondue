@@ -1,11 +1,11 @@
 fondue
 ======
 
-Pass in JavaScript source code, get a version of that code that's been instrumented to collect a trace of its execution.
+Collect real-time JavaScript traces (number of times a function has been called, locations where exceptions have been thrown, etc).
 
 Easily instrument an entire program with [node-theseus](https://github.com/adobe-research/node-theseus).
 
-Plain objects are returned from all API calls so that they can be easily passed around as JSON. [node-theseus](https://github.com/adobe-research/node-theseus) does it with a WebSocket. [Theseus](https://github.com/adobe-research/theseus) does it over Chrome's Remote Debugging API.
+Plain objects are returned from all API calls so that they can be passed around as JSON. [node-theseus](https://github.com/adobe-research/node-theseus) does this with a WebSocket. [Theseus](https://github.com/adobe-research/theseus) does it over Chrome's Remote Debugging API (which boils down to a WebSocket).
 
 [![Build Status](https://travis-ci.org/adobe-research/fondue.png)](https://travis-ci.org/adobe-research/fondue)
 
