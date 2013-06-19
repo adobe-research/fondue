@@ -43,7 +43,7 @@ function wrap(src) {
 
 // returns { tracer: ..., exception: ... }
 module.exports = function (filename, options) {
-	options = mergeInto(options, { nodejs: true });
+	options = mergeInto(options, { nodejs: true, path: filename });
 	var src = fondue.instrument(fs.readFileSync(filename, 'utf8'), options);
 	return vm.runInNewContext(wrap(src), {
 		setTimeout: setTimeout,
