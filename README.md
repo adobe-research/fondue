@@ -7,6 +7,8 @@ Rough around the edges. Especially edges not used in [Theseus](https://github.co
 
 Plain objects are returned from all API calls so that they can be easily passed around as JSON.
 
+[![Build Status](https://travis-ci.org/adobe-research/fondue.png)](https://travis-ci.org/adobe-research/fondue)
+
 Install
 -------
 
