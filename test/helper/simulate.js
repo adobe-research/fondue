@@ -29,12 +29,25 @@ var vm = require('vm');
 
 var wrapper = fs.readFileSync(path.join(__dirname, 'wrapper.js_'), 'utf8');
 
+// adds keys from options to defaultOptions, overwriting on conflicts & returning defaultOptions
+function mergeInto(options, defaultOptions) {
+	for (var key in options) {
+		defaultOptions[key] = options[key];
+	}
+	return defaultOptions;
+}
+
 function wrap(src) {
 	return wrapper.replace("[[script]]", src);
 }
 
 // returns { tracer: ..., exception: ... }
-module.exports = function (filename) {
-	var src = fondue.instrument(fs.readFileSync(filename, 'utf8'), { path: filename });
-	return vm.runInNewContext(wrap(src), { setTimeout: setTimeout, console: console })();
+module.exports = function (filename, options) {
+	options = mergeInto(options, { nodejs: true });
+	var src = fondue.instrument(fs.readFileSync(filename, 'utf8'), options);
+	return vm.runInNewContext(wrap(src), {
+		setTimeout: setTimeout,
+		console: console,
+		require: require,
+	})();
 };
