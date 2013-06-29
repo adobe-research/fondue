@@ -222,41 +222,42 @@ test('logs (console.log)', function (t) {
 
 	var aNode = nodeWithTypeName(nodes, 'function', 'a');
 	var bNode = nodeWithTypeName(nodes, 'function', 'b');
-	[aNode, bNode].forEach(t.ok.bind(t));
+	var logNode = nodeWithTypeName(nodes, 'callsite', 'console.log');
+	[aNode, bNode, logNode].forEach(t.ok.bind(t));
 
 	var handleA = tracer.trackLogs({ ids: [aNode.id] });
 	var handleB = tracer.trackLogs({ ids: [bNode.id] });
 
-	var logB = tracer.logDelta(handleB, 2);
+	var logB = tracer.logDelta(handleB, 4);
+	t.equal(logB.length, 2);
 	t.similar(logB, [
 		{ nodeId: bNode.id, arguments: [] },
-		{ nodeId: 'log', arguments: [{ value: { type: 'number', value: 1 } }] },
+		{ nodeId: logNode.id, arguments: [{ value: { type: 'number', value: 1 } }] },
 	]);
 
 	// only return console.logs that are called directly
-	var logA = tracer.logDelta(handleA, 2);
-	t.similar(logA, [{ nodeId: aNode.id, arguments: [] }]);
+	var logA = tracer.logDelta(handleA, 4);
+	t.similar(logA, [
+		{ nodeId: aNode.id, arguments: [] },
+	]);
 
 	setTimeout(function () {
 		logB = tracer.logDelta(handleB, 4);
+		t.equal(logB.length, 2);
 		t.similar(logB, [
-			{ nodeId: bNode.id, arguments: [] },                                     // synchronous
-			{ nodeId: 'log', arguments: [{ value: { type: 'number', value: 1 } }] }, // synchronous
-			{ nodeId: bNode.id, arguments: [] },                                     // asynchronous
-			{ nodeId: 'log', arguments: [{ value: { type: 'number', value: 1 } }] }, // asynchronous
+			{ nodeId: bNode.id, arguments: [] },
+			{ nodeId: logNode.id, arguments: [{ value: { type: 'number', value: 1 } }] },
 		]);
 
 		// only return console.logs that are called directly
 		logA = tracer.logDelta(handleA, 4);
+		t.equal(logA.length, 1);
 		t.similar(logA, [
-			{ nodeId: aNode.id, arguments: [] }, // the synchronous one
 			{ nodeId: aNode.id, arguments: [] }, // the asynchronous one
 		]);
 
 		t.end();
 	}, 200);
-
-	t.end();
 });
 
 test('logs (async)', function (t) {
