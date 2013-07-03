@@ -21,6 +21,7 @@
 		"instrumentation"
 	],
 	"scripts" : {
-		"test" : "tap test/*.js"
+		"test" : "tap test/*.js",
+		"build-browser" : "node lib/build-browser.js"
 	}
 }
