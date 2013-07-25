@@ -10,7 +10,8 @@
 		"url" : "https://github.com/adobe-research/fondue.git"
 	},
 	"dependencies" : {
-		"falafel" : "0.1.4"
+		"falafel" : "0.1.4",
+		"falafel-map" : "0.3.x"
 	},
 	"devDependencies" : {
 		"tap" : "0.4.x"
