@@ -30,5 +30,5 @@ if (process.argv.length <3) {
 	var path = require('path').resolve(process.cwd(), process.argv[2]);
 	var src = require('fs').readFileSync(path, { encoding: 'utf8' });
 	var instrumentedSrc = require('../lib/fondue').instrument(src, { path: path });
-	console.log(instrumentedSrc);
+	console.log(instrumentedSrc.toString());
 }
