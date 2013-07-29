@@ -24,9 +24,9 @@ var fondue = require('fondue'),
     vm = require('vm');
 
 var src = fondue.instrument('function foo(a) { return a * 2 }; foo(4)');
-var sandbox = { tracer: undefined };
+var sandbox = { __tracer: undefined };
 var output = vm.runInNewContext(src, sandbox);
-var tracer = sandbox.tracer; // created by fondue when instrumented code is run
+var tracer = sandbox.__tracer; // created by fondue when instrumented code is run
 ````
 
 Track trace points (functions, call sites, etc):
