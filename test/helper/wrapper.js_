@@ -6,8 +6,8 @@
 ///////// end script /////////
 
 	} catch(e) {
-		return { tracer: tracer, exception: e };
+		return { tracer: __tracer, exception: e };
 	}
 
-	return { tracer: tracer };
+	return { tracer: __tracer };
 })

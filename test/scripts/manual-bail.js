@@ -1,6 +1,6 @@
 function foo(bail) {
 	if (bail) {
-		tracer.bailThisTick();
+		__tracer.bailThisTick();
 	}
 
 	bar();

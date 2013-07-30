@@ -32,19 +32,22 @@ test('hits', function (t) {
 	var nodes = tracer.nodes();
 
 	var nodeWithTypeName = function (type, name) {
-		return nodes.filter(function (n) { return n.type === type && n.name === name })[0];
+		return nodes.filter(function (n) { return n.type === type && (!name || (n.name === name)) })[0];
 	};
 
 	var handle1 = tracer.trackHits();
 	var handle2 = tracer.trackHits();
+
 	var fooNode = nodeWithTypeName('function', 'foo');
 	var fooCallSiteNode = nodeWithTypeName('callsite', 'foo');
 	var timeoutCallSiteNode = nodeWithTypeName('callsite', 'setTimeout');
+	var toplevelNode = nodeWithTypeName('toplevel');
 
 	var expected = {};
 	expected[fooNode.id] = 1;
 	expected[fooCallSiteNode.id] = 1;
 	expected[timeoutCallSiteNode.id] = 1;
+	expected[toplevelNode.id] = 1;
 	t.equivalent(tracer.hitCountDeltas(handle1), expected);
 	t.equivalent(tracer.hitCountDeltas(handle2), expected);
 
@@ -52,6 +55,7 @@ test('hits', function (t) {
 		expected[fooNode.id] = 1;
 		delete expected[fooCallSiteNode.id];
 		delete expected[timeoutCallSiteNode.id];
+		delete expected[toplevelNode.id];
 		t.equivalent(tracer.hitCountDeltas(handle1), expected);
 		t.equivalent(tracer.hitCountDeltas(handle2), expected);
 

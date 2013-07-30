@@ -31,7 +31,7 @@ test('nodes', function (t) {
 	var tracer = o.tracer;
 
 	var nodes = tracer.nodes();
-	t.equal(nodes.length, 10);
+	t.equal(nodes.length, 11);
 
 	var nodeWithId = function (id) {
 		return nodes.filter(function (n) { return n.id === id })[0];
@@ -53,12 +53,12 @@ test('nodes', function (t) {
 	// function declaration
 
 	t.similar(nodeWithTypeName('function', 'a'), {
-		id: 'scripts/nodes.js-1-0-4-1',
+		id: 'scripts/nodes.js-function-1-0-4-1',
 		start: { line: 1, column: 0 },
 		end: { line: 4, column: 1 },
 		childrenIds: [
-			'scripts/nodes.js-2-1-2-16',
-			'scripts/nodes.js-3-8-3-23',
+			'scripts/nodes.js-function-2-1-2-16',
+			'scripts/nodes.js-function-3-8-3-23',
 		],
 		params: [
 			{
@@ -75,7 +75,7 @@ test('nodes', function (t) {
 	});
 
 	t.similar(nodeWithTypeName('function', 'b'), {
-		id: 'scripts/nodes.js-2-1-2-16',
+		id: 'scripts/nodes.js-function-2-1-2-16',
 		start: { line: 2, column: 1 },
 		end: { line: 2, column: 16 },
 		childrenIds: [],
@@ -83,7 +83,7 @@ test('nodes', function (t) {
 	});
 
 	t.similar(nodeWithTypeName('function', 'c'), {
-		id: 'scripts/nodes.js-3-8-3-23',
+		id: 'scripts/nodes.js-function-3-8-3-23',
 		start: { line: 3, column: 8 },
 		end: { line: 3, column: 23 },
 		childrenIds: [],
@@ -91,7 +91,7 @@ test('nodes', function (t) {
 	});
 
 	t.similar(nodeWithTypeName('function', "('a' callback)"), {
-		id: 'scripts/nodes.js-6-2-6-17',
+		id: 'scripts/nodes.js-function-6-2-6-17',
 		start: { line: 6, column: 2 },
 		end: { line: 6, column: 17 },
 		childrenIds: [],
@@ -99,7 +99,7 @@ test('nodes', function (t) {
 	});
 
 	t.similar(nodeWithTypeName('function', "('y' callback)"), {
-		id: 'scripts/nodes.js-9-4-9-19',
+		id: 'scripts/nodes.js-function-9-4-9-19',
 		start: { line: 9, column: 4 },
 		end: { line: 9, column: 19 },
 		childrenIds: [],
@@ -109,7 +109,7 @@ test('nodes', function (t) {
 	// call site
 
 	t.similar(nodeWithTypeName('callsite', 'a'), {
-		id: 'scripts/nodes.js-5-0-5-3',
+		id: 'scripts/nodes.js-callsite-5-0-5-3',
 		start: { line: 5, column: 0 },
 		end: { line: 5, column: 3 },
 		childrenIds: [],

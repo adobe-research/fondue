@@ -86,7 +86,7 @@ test('auto-bail', function (t) {
 	var deltas = tracer.hitCountDeltas(hitsHandle);
 	var sum = 0;
 	for (var nodeId in deltas) { sum += deltas[nodeId] }
-	t.equal(sum, 1024);
+	t.equal(sum, 1023);
 
 	// the call to baz should not have been recorded
 	t.equal(deltas[bazNode.id], undefined);
