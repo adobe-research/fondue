@@ -56,10 +56,6 @@ test('nodes', function (t) {
 		id: 'scripts/nodes.js-function-1-0-4-1',
 		start: { line: 1, column: 0 },
 		end: { line: 4, column: 1 },
-		childrenIds: [
-			'scripts/nodes.js-function-2-1-2-16',
-			'scripts/nodes.js-function-3-8-3-23',
-		],
 		params: [
 			{
 				name: 'alpha',
@@ -78,7 +74,6 @@ test('nodes', function (t) {
 		id: 'scripts/nodes.js-function-2-1-2-16',
 		start: { line: 2, column: 1 },
 		end: { line: 2, column: 16 },
-		childrenIds: [],
 		params: [],
 	});
 
@@ -86,7 +81,6 @@ test('nodes', function (t) {
 		id: 'scripts/nodes.js-function-3-8-3-23',
 		start: { line: 3, column: 8 },
 		end: { line: 3, column: 23 },
-		childrenIds: [],
 		params: [],
 	});
 
@@ -94,7 +88,6 @@ test('nodes', function (t) {
 		id: 'scripts/nodes.js-function-6-2-6-17',
 		start: { line: 6, column: 2 },
 		end: { line: 6, column: 17 },
-		childrenIds: [],
 		params: [],
 	});
 
@@ -102,7 +95,6 @@ test('nodes', function (t) {
 		id: 'scripts/nodes.js-function-9-4-9-19',
 		start: { line: 9, column: 4 },
 		end: { line: 9, column: 19 },
-		childrenIds: [],
 		params: [],
 	});
 
@@ -112,7 +104,6 @@ test('nodes', function (t) {
 		id: 'scripts/nodes.js-callsite-5-0-5-3',
 		start: { line: 5, column: 0 },
 		end: { line: 5, column: 3 },
-		childrenIds: [],
 	});
 
 	t.end();
