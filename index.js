@@ -25,7 +25,7 @@
 var falafel = require('falafel');
 var falafelMap = require('falafel-map');
 var fs = require('fs');
-var JSHINT = require('./jshint').JSHINT;
+var JSHINT = require('./lib/jshint').JSHINT;
 var basename = require('path').basename;
 
 
@@ -61,10 +61,10 @@ function instrumentationPrefix(options) {
 	});
 
 	// the inline comments below are markers for building the browser version of fondue
-	var tracerSource = /*tracer.js{*/fs.readFileSync(__dirname + '/tracer.js', 'utf8')/*}tracer.js*/;
+	var tracerSource = /*tracer.js{*/fs.readFileSync(__dirname + '/lib/tracer.js', 'utf8')/*}tracer.js*/;
 	return template(tracerSource, {
 		name: options.name,
-		version: JSON.stringify(require('../package.json').version),
+		version: JSON.stringify(require('./package.json').version),
 		nodejs: options.nodejs,
 		maxInvocationsPerTick: options.maxInvocationsPerTick,
 	});
@@ -411,7 +411,7 @@ var traceFilter = function (content, options) {
 			}).toString();
 
 		} catch (e) {
-			console.log("exception during parsing", path, e);
+			console.error("exception during parsing", path, e.stack);
 			return;
 		}
 
@@ -419,7 +419,7 @@ var traceFilter = function (content, options) {
 	};
 
 	var prologue = "";
-	prologue += template(/*tracer-stub.js{*/fs.readFileSync(__dirname + '/tracer-stub.js', 'utf8')/*}tracer-stub.js*/, { name: options.tracer_name });
+	prologue += template(/*tracer-stub.js{*/fs.readFileSync(__dirname + '/lib/tracer-stub.js', 'utf8')/*}tracer-stub.js*/, { name: options.tracer_name });
 	if (options.source_map) prologue += "/*mapshere*/";
 	prologue += options.tracer_name + '.add(' + JSON.stringify(options.path) + ', ' + extractTracePoints(content, options.path) + ');\n\n';
 
@@ -582,7 +582,7 @@ var traceFilter = function (content, options) {
 			processed = m;
 		}
 	} catch (e) {
-		console.log('exception during parsing', options.path, e, e.stack);
+		console.error('exception during parsing', options.path, e.stack);
 		return content;
 	}
 

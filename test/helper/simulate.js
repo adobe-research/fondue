@@ -22,7 +22,7 @@
  *
  */
 
-var fondue = require('../../lib/fondue');
+var fondue = require('../../');
 var fs = require('fs');
 var path = require('path');
 var vm = require('vm');

@@ -4,7 +4,7 @@
 	"license" : "MIT",
 	"author" : "Tom Lieber <tom@alltom.com>",
 	"version" : "0.4.1",
-	"main" : "./lib/fondue",
+	"main" : "./index",
 	"repository" : {
 		"type" : "git",
 		"url" : "https://github.com/adobe-research/fondue.git"
