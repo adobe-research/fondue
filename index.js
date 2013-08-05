@@ -87,10 +87,15 @@ function instrument(src, options) {
 	};
 	options = mergeInto(options, defaultOptions);
 
-	var prefix = '', output;
+	var prefix = '', shebang = '', output, m;
+
+	if (m = /^(#![^\n]+)\n/.exec(src)) {
+		shebang = m[1];
+		src = src.slice(shebang.length);
+	}
 
 	if (options.include_prefix) {
-		prefix = instrumentationPrefix({
+		prefix += instrumentationPrefix({
 			name: options.tracer_name,
 			nodejs: options.nodejs,
 			maxInvocationsPerTick: options.maxInvocationsPerTick,
@@ -98,9 +103,9 @@ function instrument(src, options) {
 	}
 
 	if (src.indexOf("/*theseus" + " instrument: false */") !== -1) {
-		output = prefix + src;
+		output = shebang + prefix + src;
 	} else {
-		output = traceFilter(src, {
+		output = shebang + traceFilter(src, {
 			prefix: prefix,
 			path: options.path,
 			tracer_name: options.tracer_name,
@@ -583,7 +588,7 @@ var traceFilter = function (content, options) {
 		}
 	} catch (e) {
 		console.error('exception during parsing', options.path, e.stack);
-		return content;
+		return options.prefix + content;
 	}
 
 	return processed;
