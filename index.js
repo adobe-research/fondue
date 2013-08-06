@@ -486,7 +486,7 @@ var traceFilter = function (content, options) {
 
 				// convert the arguments to strings
 				var args = JSON.stringify(attrs);
-				var entryArgs = args.slice(0, args.length - 1) + ', arguments: Array.prototype.slice.apply(arguments), this: this }';
+				var entryArgs = args.slice(0, args.length - 1) + ', arguments: ' + options.tracer_name + '.Array.prototype.slice.apply(arguments), this: this }';
 				var exitArgs = args;
 
 				if (options.trace_function_entry) {
