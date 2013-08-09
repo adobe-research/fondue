@@ -105,13 +105,19 @@ function instrument(src, options) {
 	if (src.indexOf("/*theseus" + " instrument: false */") !== -1) {
 		output = shebang + prefix + src;
 	} else {
-		output = shebang + traceFilter(src, {
+		var m = traceFilter(src, {
 			prefix: prefix,
 			path: options.path,
 			tracer_name: options.tracer_name,
 			sourceFilename: options.sourceFilename,
 			generatedFilename: options.generatedFilename,
 		});
+		output = {
+			map: m.map,
+			toString: function () {
+				return shebang + m.toString();
+			},
+		};
 	}
 
 	return output;
