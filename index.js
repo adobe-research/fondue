@@ -25,7 +25,6 @@
 var falafel = require('falafel');
 var falafelMap = require('falafel-map');
 var fs = require('fs');
-var JSHINT = require('./lib/jshint').JSHINT;
 var basename = require('path').basename;
 
 
@@ -599,96 +598,6 @@ var traceFilter = function (content, options) {
 
 	return processed;
 };
-
-/**
- * finds the variables that are in scope at the given line/col using the
- * provided jshintData object, which you can obtain like this:
- *
- *   jshint(src);
- *   var jshintData = jshint.data();
- *
- * by default (if includeAllLocal is not true), local variables (except for
- * parameters) in the inner-most scope will not be included. for example:
- *
- *   function foo(a) {
- *     var b;
- *     var c = function (d) {
- *       // XXX
- *       var e;
- *     }
- *   }
- *
- * if you provide a line/col at the XXX, you'll receive
- *   [a, b, c, d]    if includeAllLocal is false
- *   [a, b, c, d, e] if includeAllLocal is true
- */
-function findVariablesInScope(jshintData, line, col, includeAllLocal) {
-	var fInfo = jshintData.functions;
-
-	// comparator for positions in the form { line: XXX, character: YYY }
-	var compare = function (pos1, pos2) {
-		var c = pos1.line - pos2.line;
-		if (c == 0) {
-			c = pos1.character - pos2.character;
-		}
-		return c;
-	};
-
-	// finds all functions in fInfo surrounding line/col
-	var findContainingFunctions = function () {
-		var functions = [];
-		for (var i in fInfo) {
-			var startsBefore = compare({ line: fInfo[i].line, character: fInfo[i].character },
-										 { line: line, character: col }) <= 0;
-			var endsAfter    = compare({ line: fInfo[i].last, character: fInfo[i].lastcharacter },
-										 { line: line, character: col }) >= 0;
-			if (startsBefore && endsAfter) {
-				functions.push(fInfo[i]);
-			}
-		}
-
-		// sort functions by appearance (just in case they aren't)
-		functions.sort(function (a, b) {
-			if (a.line !== b.line) {
-				return a.line < b.line ? -1 : 1;
-			}
-			if (a.character !== b.character) {
-				return a.character < b.character ? -1 : 1;
-			}
-			return 0;
-		});
-
-		return functions;
-	};
-
-	// returns all variables that are in scope (except globals) from the given list of functions
-	var collectVars = function (functions) {
-		var outerGroups = ['closure', 'outer', 'var', 'unused', 'param'];
-		var innerGroups = ['param'];
-
-		// add vars as keys in an object (de-dup)
-		var varsO = {};
-		for (var i = 0; i < functions.length; i++) {
-			var newVars = [];
-			var group = (!includeAllLocal && i == functions.length - 1) ? innerGroups : outerGroups;
-			for (var j in group) {
-				newVars = newVars.concat(functions[i][group[j]] || []);
-			}
-			for (var v in newVars) {
-				varsO[newVars[v]] = true;
-			}
-		}
-
-		// pull them out into a sorted array
-		var vars = [];
-		for (var i in varsO) {
-			vars.push(i);
-		}
-		return vars.sort();
-	};
-
-	return collectVars(findContainingFunctions());
-}
 
 
 module.exports = {
