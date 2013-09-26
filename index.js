@@ -417,6 +417,15 @@ var traceFilter = function (content, options) {
 					if (node.alternate && node.alternate.type !== 'IfStatement') {
 						handleBranch(node.alternate);
 					}
+				} else if (node.type === "ExpressionStatement") {
+					var endLoc = { start: node.loc.end, end: node.loc.end };
+					nodes.push({
+						path: path,
+						start: endLoc.end,
+						end: endLoc.end,
+						id: makeId("probe", path, endLoc),
+						type: "probe",
+					});
 				}
 			}).toString();
 
@@ -538,6 +547,12 @@ var traceFilter = function (content, options) {
 					if (options.trace_branches) {
 						// TODO
 					}
+				} else if (node.type === "ExpressionStatement") {
+					var addSemicolon = !/;$/.test(node.source());
+					var endLoc = { start: node.loc.end, end: node.loc.end };
+					var id = makeId("probe", loc.path, endLoc);
+					update(node.expression, options.tracer_name, ".traceProbeValue({ nodeId: ", JSON.stringify(id), ", val: ", sourceNodes(node.expression), " })");
+					update(node, sourceNodes(node), addSemicolon ? ";" : "");
 				} else if (semiColonStatements.indexOf(node.type) !== -1) {
 					if (!/;$/.test(node.source())) {
 						update(node, sourceNodes(node), ";");

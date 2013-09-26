@@ -31,7 +31,7 @@ test('nodes', function (t) {
 	var tracer = o.tracer;
 
 	var nodes = tracer.nodes();
-	t.equal(nodes.length, 11);
+	t.equal(nodes.length, 14);
 
 	var nodeWithId = function (id) {
 		return nodes.filter(function (n) { return n.id === id })[0];
