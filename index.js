@@ -353,7 +353,7 @@ var traceFilter = function (content, options) {
 				loc: true
 			}, function (node) {
 
-				// save its original source code
+				// save each function's original source code
 				if (node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration') {
 					functionSources[makeId('function', options.path, node.loc)] = node.source();
 				}
