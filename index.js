@@ -556,7 +556,12 @@ var traceFilter = function (content, options) {
 					var addSemicolon = !/;$/.test(node.source());
 					var endLoc = { start: node.loc.end, end: node.loc.end };
 					var id = makeId("probe", loc.path, endLoc);
-					update(node.expression, options.tracer_name, ".traceProbeValue({ nodeId: ", JSON.stringify(id), ", val: ", sourceNodes(node.expression), " })");
+					if (node.expression.type === 'CallExpression') {
+						var callId = makeId("callsite", loc.path, node.expression.loc);
+						update(node.expression, options.tracer_name, ".traceProbeValue({ nodeId: ", JSON.stringify(id), ", val: ", sourceNodes(node.expression), ", callId: ", JSON.stringify(callId), " })");
+					}  else {
+						update(node.expression, options.tracer_name, ".traceProbeValue({ nodeId: ", JSON.stringify(id), ", val: ", sourceNodes(node.expression), " })");
+					}
 					update(node, sourceNodes(node), addSemicolon ? ";" : "");
 				} else if (semiColonStatements.indexOf(node.type) !== -1) {
 					if (!/;$/.test(node.source())) {
