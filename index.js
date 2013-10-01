@@ -344,6 +344,8 @@ var traceFilter = function (content, options) {
 	var processed = content;
 	var functionSources = {};
 
+	var sourceLines = content.split("\n");
+
 	var extractTracePoints = function (content, path) {
 		var nodes = [];
 
@@ -418,7 +420,10 @@ var traceFilter = function (content, options) {
 						handleBranch(node.alternate);
 					}
 				} else if (node.type === "ExpressionStatement") {
-					var endLoc = { start: node.loc.end, end: node.loc.end };
+					var endLine = node.loc.end.line;
+					var endOfLine = sourceLines[endLine - 1].length;
+					var endOfLineLoc = { line: endLine, column: endOfLine };
+					var endLoc = { start: endOfLineLoc, end: endOfLineLoc };
 					nodes.push({
 						path: path,
 						start: endLoc.end,
