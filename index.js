@@ -346,6 +346,18 @@ var traceFilter = function (content, options) {
 
 	var sourceLines = content.split("\n");
 
+	function isLastOnLine(node) {
+		// TODO
+		return true;
+	}
+
+	function endOfLineLoc(node) {
+		var endLine = node.loc.end.line;
+		var endOfLine = sourceLines[endLine - 1].length;
+		var endOfLineLoc = { line: endLine, column: endOfLine };
+		return { start: endOfLineLoc, end: endOfLineLoc };
+	}
+
 	var extractTracePoints = function (content, path) {
 		var nodes = [];
 
@@ -411,6 +423,17 @@ var traceFilter = function (content, options) {
 						});
 					};
 
+					if (isLastOnLine(node.test)) {
+						var endLoc = endOfLineLoc(node.test);
+						nodes.push({
+							path: path,
+							start: endLoc.end,
+							end: endLoc.end,
+							id: makeId("probe", path, endLoc),
+							type: "probe",
+						});
+					}
+
 					if (node.consequent) {
 						handleBranch(node.consequent);
 					}
@@ -419,11 +442,17 @@ var traceFilter = function (content, options) {
 					if (node.alternate && node.alternate.type !== 'IfStatement') {
 						handleBranch(node.alternate);
 					}
-				} else if (node.type === "ExpressionStatement") {
-					var endLine = node.loc.end.line;
-					var endOfLine = sourceLines[endLine - 1].length;
-					var endOfLineLoc = { line: endLine, column: endOfLine };
-					var endLoc = { start: endOfLineLoc, end: endOfLineLoc };
+				} else if (["ExpressionStatement", "ReturnStatement"].indexOf(node.type) !== -1) {
+					var endLoc = endOfLineLoc(node);
+					nodes.push({
+						path: path,
+						start: endLoc.end,
+						end: endLoc.end,
+						id: makeId("probe", path, endLoc),
+						type: "probe",
+					});
+				} else if(node.type === "VariableDeclarator") {
+					var endLoc = endOfLineLoc(node);
 					nodes.push({
 						path: path,
 						start: endLoc.end,
@@ -472,6 +501,15 @@ var traceFilter = function (content, options) {
 			var sourceNodes = function (node) {
 				return node.source();
 			};
+		}
+
+		function addProbe(node, probeId) {
+			if (node.type === "CallExpression") {
+				var callId = makeId("callsite", options.path, node.loc);
+				update(node, options.tracer_name, ".traceProbeValue({ nodeId: ", JSON.stringify(probeId), ", val: ", sourceNodes(node), ", callId: ", JSON.stringify(callId), " })");
+			} else {
+				update(node, options.tracer_name, ".traceProbeValue({ nodeId: ", JSON.stringify(probeId), ", val: ", sourceNodes(node), " })");
+			}
 		}
 
 		m = fala({
@@ -543,12 +581,18 @@ var traceFilter = function (content, options) {
 				var semiColonStatements = ["BreakStatement", "ContinueStatement", "ExpressionStatement", "ReturnStatement", "ThrowStatement"];
 				if (node.type === "ReturnStatement" && node.argument) {
 					if (options.trace_function_entry) {
+						var endLoc = { start: node.loc.end, end: node.loc.end };
+						var probeId = makeId("probe", loc.path, endLoc);
 						var sNodes = sourceNodes(node).slice(6);
 						var semicolon = sNodes.slice(-1)[0] === ";";
 						if (semicolon) sNodes = sNodes.slice(0, -1);
-						update(node, "return ", options.tracer_name, ".traceReturnValue(", sNodes, ")", (semicolon ? ";" : ""), "\n");
+						update(node, "return ", options.tracer_name, ".traceReturnValue(", sNodes, ", ", JSON.stringify(probeId), ")", (semicolon ? ";" : ""), "\n");
 					}
 				} else if (node.type === 'IfStatement') {
+					var endLoc = endOfLineLoc(node.test);
+					var probeId = makeId("probe", loc.path, endLoc);
+					update(node.test, options.tracer_name, ".traceProbeValue({ nodeId: ", JSON.stringify(probeId), ", val: ", sourceNodes(node.test), " })");
+
 					if (options.trace_branches) {
 						// TODO
 					}
@@ -570,6 +614,11 @@ var traceFilter = function (content, options) {
 				}
 				update(node, sourceNodes(node));
 			} else if (node.type === 'VariableDeclaration' || node.type === 'VariableDeclarator') {
+				if (node.type === "VariableDeclarator") {
+					var endLoc = endOfLineLoc(node);
+					var probeId = makeId("probe", loc.path, endLoc);
+					addProbe(node.init, probeId);
+				}
 				update(node, sourceNodes(node));
 			} else if (node.type === 'SwitchStatement') {
 				if (options.trace_switches) {
