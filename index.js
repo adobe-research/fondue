@@ -614,7 +614,7 @@ var traceFilter = function (content, options) {
 				}
 				update(node, sourceNodes(node));
 			} else if (node.type === 'VariableDeclaration' || node.type === 'VariableDeclarator') {
-				if (node.type === "VariableDeclarator") {
+				if (node.type === "VariableDeclarator" && node.init) {
 					var endLoc = endOfLineLoc(node);
 					var probeId = makeId("probe", loc.path, endLoc);
 					addProbe(node.init, probeId);
