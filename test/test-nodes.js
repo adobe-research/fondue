@@ -31,7 +31,7 @@ test('nodes', function (t) {
 	var tracer = o.tracer;
 
 	var nodes = tracer.nodes();
-	t.equal(nodes.length, 14);
+	t.equal(nodes.length, 16);
 
 	var nodeWithId = function (id) {
 		return nodes.filter(function (n) { return n.id === id })[0];
@@ -39,6 +39,10 @@ test('nodes', function (t) {
 
 	var nodeWithTypeName = function (type, name, i) {
 		return nodes.filter(function (n) { return n.type === type && n.name === name })[i || 0];
+	};
+
+	var nodeWithTypeStart = function (type, startLoc) {
+		return nodes.filter(function (n) { return n.type === type && n.start.line === startLoc.line && n.start.column === startLoc.column })[0];
 	};
 
 	// built-ins
@@ -132,6 +136,32 @@ test('nodes', function (t) {
 		end: { line: 9, column: 20 },
 		nameStart: { line: 9, column: 2 },
 		nameEnd: { line: 9, column: 3 },
+	});
+
+	// probes
+
+	// return function c() {};
+	t.similar(nodeWithTypeStart('probe', { line: 3, column: 8 }), {
+		id: 'scripts/nodes.js-probe-3-8-3-23',
+		start: { line: 3, column: 8 },
+		end: { line: 3, column: 23 },
+		probeLoc: { line: 3, column: 24 },
+	});
+
+	// a()
+	t.similar(nodeWithTypeStart('probe', { line: 5, column: 0 }), {
+		id: 'scripts/nodes.js-probe-5-0-5-3',
+		start: { line: 5, column: 0 },
+		end: { line: 5, column: 3 },
+		probeLoc: { line: 5, column: 4 },
+	});
+
+	// x = { y: function () { } }
+	t.similar(nodeWithTypeStart('probe', { line: 8, column: 4 }), {
+		id: 'scripts/nodes.js-probe-8-4-8-30',
+		start: { line: 8, column: 4 },
+		end: { line: 8, column: 30 },
+		probeLoc: { line: 8, column: 31 },
 	});
 
 	t.end();

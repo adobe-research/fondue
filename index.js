@@ -442,22 +442,34 @@ var traceFilter = function (content, options) {
 					if (node.alternate && node.alternate.type !== 'IfStatement') {
 						handleBranch(node.alternate);
 					}
-				} else if (["ExpressionStatement", "ReturnStatement"].indexOf(node.type) !== -1) {
+				} else if (node.type === "ExpressionStatement") {
 					var endLoc = endOfLineLoc(node);
 					nodes.push({
 						path: path,
-						start: endLoc.end,
-						end: endLoc.end,
-						id: makeId("probe", path, endLoc),
+						start: node.expression.loc.start,
+						end: node.expression.loc.end,
+						probeLoc: endLoc.start,
+						id: makeId("probe", path, node.expression.loc),
+						type: "probe",
+					});
+				} else if (node.type === "ReturnStatement") {
+					var endLoc = endOfLineLoc(node);
+					nodes.push({
+						path: path,
+						start: node.argument.loc.start,
+						end: node.argument.loc.end,
+						probeLoc: endLoc.start,
+						id: makeId("probe", path, node.argument.loc),
 						type: "probe",
 					});
 				} else if(node.type === "VariableDeclarator") {
 					var endLoc = endOfLineLoc(node);
 					nodes.push({
 						path: path,
-						start: endLoc.end,
-						end: endLoc.end,
-						id: makeId("probe", path, endLoc),
+						start: node.loc.start,
+						end: node.loc.end,
+						probeLoc: endLoc.start,
+						id: makeId("probe", path, node.loc),
 						type: "probe",
 					});
 				}
