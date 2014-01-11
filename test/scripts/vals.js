@@ -12,11 +12,11 @@ a = foo()
 
 function foo() {
 	return {
-		bar: function () { return 22 },
+		bar: function () { return 22 /* deferred probe */ },
 		baz: 42,
-	};
+	}; // deferred probe
 }
 
 setTimeout(function () {
-	foo().bar();
+	foo().bar(); // deferred probe
 }, 100);

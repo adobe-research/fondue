@@ -38,11 +38,10 @@ test('vals', function (t) {
 	});
 
 	var handle = tracer.trackProbeValues({ nodeIds: probeNodeIds });
-	t.equal(Object.keys(tracer.probeValuesDelta(handle)).length, probeNodeIds.length - 1);
+	t.equal(Object.keys(tracer.probeValuesDelta(handle)).length, probeNodeIds.length - 3);
 
 	setTimeout(function () {
-		t.equal(Object.keys(tracer.probeValuesDelta(handle)).length, 1);
-
+		t.equal(Object.keys(tracer.probeValuesDelta(handle)).length, 3);
 		t.end();
 	}, 200);
 });

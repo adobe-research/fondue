@@ -464,15 +464,17 @@ var traceFilter = function (content, options) {
 						type: "probe",
 					};
 				} else if(node.type === "VariableDeclarator") {
-					var endLoc = endOfLineLoc(node);
-					probesByLine[endLoc.start.line] = {
-						path: path,
-						start: node.loc.start,
-						end: node.loc.end,
-						probeLoc: endLoc.start,
-						id: makeId("probe", path, node.loc),
-						type: "probe",
-					};
+					if (node.init) {
+						var endLoc = endOfLineLoc(node);
+						probesByLine[endLoc.start.line] = {
+							path: path,
+							start: node.loc.start,
+							end: node.loc.end,
+							probeLoc: endLoc.start,
+							id: makeId("probe", path, node.loc),
+							type: "probe",
+						};
+					}
 				}
 			}).toString();
 
@@ -616,7 +618,7 @@ var traceFilter = function (content, options) {
 				} else if (node.type === "ExpressionStatement") {
 					var addSemicolon = !/;$/.test(node.source());
 					var endLoc = { start: node.loc.end, end: node.loc.end };
-					var id = makeId("probe", loc.path, endLoc);
+					var id = makeId("probe", loc.path, node.expression.loc);
 					if (node.expression.type === 'CallExpression') {
 						var callId = makeId("callsite", loc.path, node.expression.loc);
 						update(node.expression, options.tracer_name, ".traceProbeValue({ nodeId: ", JSON.stringify(id), ", val: ", sourceNodes(node.expression), ", callId: ", JSON.stringify(callId), " })");
@@ -631,9 +633,9 @@ var traceFilter = function (content, options) {
 				}
 				update(node, sourceNodes(node));
 			} else if (node.type === 'VariableDeclaration' || node.type === 'VariableDeclarator') {
-				if (node.type === "VariableDeclarator" && node.init) {
+				if (node.type === 'VariableDeclarator' && node.init) {
 					var endLoc = endOfLineLoc(node);
-					var probeId = makeId("probe", loc.path, endLoc);
+					var probeId = makeId("probe", loc.path, node.loc);
 					addProbe(node.init, probeId);
 				}
 				update(node, sourceNodes(node));
