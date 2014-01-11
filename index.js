@@ -360,6 +360,7 @@ var traceFilter = function (content, options) {
 
 	var extractTracePoints = function (content, path) {
 		var nodes = [];
+		var probesByLine = {};
 
 		try {
 			falafel({
@@ -444,40 +445,44 @@ var traceFilter = function (content, options) {
 					}
 				} else if (node.type === "ExpressionStatement") {
 					var endLoc = endOfLineLoc(node);
-					nodes.push({
+					probesByLine[endLoc.start.line] = {
 						path: path,
 						start: node.expression.loc.start,
 						end: node.expression.loc.end,
 						probeLoc: endLoc.start,
 						id: makeId("probe", path, node.expression.loc),
 						type: "probe",
-					});
+					};
 				} else if (node.type === "ReturnStatement") {
 					var endLoc = endOfLineLoc(node);
-					nodes.push({
+					probesByLine[endLoc.start.line] = {
 						path: path,
 						start: node.argument.loc.start,
 						end: node.argument.loc.end,
 						probeLoc: endLoc.start,
 						id: makeId("probe", path, node.argument.loc),
 						type: "probe",
-					});
+					};
 				} else if(node.type === "VariableDeclarator") {
 					var endLoc = endOfLineLoc(node);
-					nodes.push({
+					probesByLine[endLoc.start.line] = {
 						path: path,
 						start: node.loc.start,
 						end: node.loc.end,
 						probeLoc: endLoc.start,
 						id: makeId("probe", path, node.loc),
 						type: "probe",
-					});
+					};
 				}
 			}).toString();
 
 		} catch (e) {
 			console.error("exception during parsing", path, e.stack);
 			return;
+		}
+
+		for (var line in probesByLine) {
+			nodes.push(probesByLine[line]);
 		}
 
 		return JSON.stringify({ nodes: nodes });

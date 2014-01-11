@@ -31,7 +31,7 @@ test('nodes', function (t) {
 	var tracer = o.tracer;
 
 	var nodes = tracer.nodes();
-	t.equal(nodes.length, 16);
+	t.equal(nodes.length, 19);
 
 	var nodeWithId = function (id) {
 		return nodes.filter(function (n) { return n.id === id })[0];
@@ -57,7 +57,7 @@ test('nodes', function (t) {
 	// top-level
 
 	t.similar(nodeWithTypeName('toplevel', '(nodes.js toplevel)'), {
-		id: 'scripts/nodes.js-toplevel-1-0-9-21',
+		id: 'scripts/nodes.js-toplevel-1-0-13-12',
 		type: 'toplevel',
 	});
 
@@ -162,6 +162,30 @@ test('nodes', function (t) {
 		start: { line: 8, column: 4 },
 		end: { line: 8, column: 30 },
 		probeLoc: { line: 8, column: 31 },
+	});
+
+	// var abc = 1, def = 2;
+	t.similar(nodeWithTypeStart('probe', { line: 11, column: 13 }), {
+		id: 'scripts/nodes.js-probe-11-13-11-20',
+		start: { line: 11, column: 13 },
+		end: { line: 11, column: 20 },
+		probeLoc: { line: 11, column: 21 },
+	});
+
+	// var ghi = 3,
+	t.similar(nodeWithTypeStart('probe', { line: 12, column: 4 }), {
+		id: 'scripts/nodes.js-probe-12-4-12-11',
+		start: { line: 12, column: 4 },
+		end: { line: 12, column: 11 },
+		probeLoc: { line: 12, column: 12 },
+	});
+
+	//     jkl = 4;
+	t.similar(nodeWithTypeStart('probe', { line: 13, column: 4 }), {
+		id: 'scripts/nodes.js-probe-13-4-13-11',
+		start: { line: 13, column: 4 },
+		end: { line: 13, column: 11 },
+		probeLoc: { line: 13, column: 12 },
 	});
 
 	t.end();
