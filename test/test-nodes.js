@@ -37,8 +37,8 @@ test('nodes', function (t) {
 		return nodes.filter(function (n) { return n.id === id })[0];
 	};
 
-	var nodeWithTypeName = function (type, name) {
-		return nodes.filter(function (n) { return n.type === type && n.name === name })[0];
+	var nodeWithTypeName = function (type, name, i) {
+		return nodes.filter(function (n) { return n.type === type && n.name === name })[i || 0];
 	};
 
 	// built-ins
@@ -48,6 +48,13 @@ test('nodes', function (t) {
 		type: 'function',
 		start: { line: 0, column: 0 },
 		end: { line: 0, column: 0 },
+	});
+
+	// top-level
+
+	t.similar(nodeWithTypeName('toplevel', '(nodes.js toplevel)'), {
+		id: 'scripts/nodes.js-toplevel-1-0-9-21',
+		type: 'toplevel',
 	});
 
 	// function declaration
@@ -84,6 +91,13 @@ test('nodes', function (t) {
 		params: [],
 	});
 
+	t.similar(nodeWithTypeName('function', 'x.y'), {
+		id: 'scripts/nodes.js-function-8-13-8-28',
+		start: { line: 8, column: 13 },
+		end: { line: 8, column: 28 },
+		params: [],
+	});
+
 	t.similar(nodeWithTypeName('function', "('a' callback)"), {
 		id: 'scripts/nodes.js-function-6-2-6-17',
 		start: { line: 6, column: 2 },
@@ -104,6 +118,20 @@ test('nodes', function (t) {
 		id: 'scripts/nodes.js-callsite-5-0-5-3',
 		start: { line: 5, column: 0 },
 		end: { line: 5, column: 3 },
+	});
+
+	t.similar(nodeWithTypeName('callsite', 'a', 1), {
+		id: 'scripts/nodes.js-callsite-6-0-6-18',
+		start: { line: 6, column: 0 },
+		end: { line: 6, column: 18 },
+	});
+
+	t.similar(nodeWithTypeName('callsite', 'x.y'), {
+		id: 'scripts/nodes.js-callsite-9-0-9-20',
+		start: { line: 9, column: 0 },
+		end: { line: 9, column: 20 },
+		nameStart: { line: 9, column: 2 },
+		nameEnd: { line: 9, column: 3 },
 	});
 
 	t.end();
