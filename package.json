@@ -3,7 +3,7 @@
 	"description" : "rewrites JavaScript code to collect partial execution traces",
 	"license" : "MIT",
 	"author" : "Tom Lieber <tom@alltom.com>",
-	"version" : "0.5.3",
+	"version" : "0.5.4",
 	"main" : "./index",
 	"repository" : {
 		"type" : "git",
