@@ -1,9 +1,17 @@
-function foo() {
-	function except() { throw 'lol' }
+function except() { throw 'foo' }
+
+function catches() {
 	try {
 		except();
 	} catch (e) {
 	}
 }
-foo();
-setTimeout(foo, 100);
+
+function doesNotCatch() {
+	except();
+}
+
+setTimeout(catches, 100);
+// setTimeout(doesNotCatch, 100); // the test harness can't handle this yet
+catches();
+doesNotCatch();

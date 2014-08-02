@@ -25,9 +25,10 @@
 var test = require('tap').test;
 var simulate = require('./helper/simulate');
 
+// report hits only for uncaught exceptions
 test('hits', function (t) {
 	var o = simulate('scripts/exceptions.js');
-	t.ok(o.tracer); t.notOk(o.exception);
+	t.ok(o.tracer); t.ok(o.exception);
 	var tracer = o.tracer;
 	var nodes = tracer.nodes();
 
@@ -41,11 +42,9 @@ test('hits', function (t) {
 
 	var handle1 = tracer.trackExceptions();
 	var handle2 = tracer.trackExceptions();
-	var fooNode = nodeWithTypeName('function', 'foo');
 	var exceptNode = nodeWithTypeName('function', 'except');
-	var fooCallSiteNode = nodeWithTypeName('callsite', 'foo');
-	var exceptCallSiteNode = nodeWithTypeName('callsite', 'except');
-	var fooTimeoutCallSiteNode = nodesWithTypeName('callsite', 'setTimeout')[0];
+	var catchesNode = nodeWithTypeName('function', 'catches');
+	var doesNotCatchNode = nodeWithTypeName('function', 'doesNotCatch');
 
 	var expected = { counts: {} };
 	expected.counts[exceptNode.id] = 1;
@@ -53,11 +52,98 @@ test('hits', function (t) {
 	t.equivalent(tracer.newExceptions(handle2), expected);
 
 	setTimeout(function () {
-		t.equivalent(tracer.newExceptions(handle1), expected);
-		t.equivalent(tracer.newExceptions(handle2), expected);
-
 		t.equivalent(tracer.newExceptions(handle1), { counts: {} });
 		t.equivalent(tracer.newExceptions(handle2), { counts: {} });
+
+		t.end();
+	}, 200);
+});
+
+// exceptions show up on all invocations from which they're thrown
+test('logs', function (t) {
+	var o = simulate('scripts/exceptions.js');
+	t.ok(o.tracer); t.ok(o.exception);
+	var tracer = o.tracer;
+	var nodes = tracer.nodes();
+
+	var nodeWithTypeName = function (type, name) {
+		return nodes.filter(function (n) { return n.type === type && n.name === name })[0];
+	};
+
+	var nodesWithTypeName = function (type, name) {
+		return nodes.filter(function (n) { return n.type === type && n.name === name });
+	};
+
+	var exceptNode = nodeWithTypeName('function', 'except');
+	var catchesNode = nodeWithTypeName('function', 'catches');
+	var doesNotCatchNode = nodeWithTypeName('function', 'doesNotCatch');
+
+	var handle = tracer.trackLogs({ ids: [exceptNode.id, catchesNode.id, doesNotCatchNode.id] });
+
+	var log = tracer.logDelta(handle, 4);
+	var expectedLog = [{
+		nodeId: catchesNode.id,
+		// no exception
+	}, {
+		nodeId: exceptNode.id,
+		exception: {},
+	}, {
+		nodeId: doesNotCatchNode.id,
+		exception: {},
+	}, {
+		nodeId: exceptNode.id,
+		exception: {},
+	}];
+	t.similar(log, expectedLog);
+	t.equivalent(tracer.logDelta(handle, 1), []);
+
+	setTimeout(function () {
+		var log = tracer.logDelta(handle, 2);
+		var expectedLog = [{
+			nodeId: catchesNode.id,
+			// no exception
+		}, {
+			nodeId: exceptNode.id,
+			exception: {},
+		}];
+		t.similar(log, expectedLog);
+		t.equivalent(tracer.logDelta(handle, 1), []);
+
+		t.end();
+	}, 200);
+});
+
+// an exception log only shows uncaught exceptions
+test('logs 2', function (t) {
+	var o = simulate('scripts/exceptions.js');
+	t.ok(o.tracer); t.ok(o.exception);
+	var tracer = o.tracer;
+	var nodes = tracer.nodes();
+
+	var nodeWithTypeName = function (type, name) {
+		return nodes.filter(function (n) { return n.type === type && n.name === name })[0];
+	};
+
+	var nodesWithTypeName = function (type, name) {
+		return nodes.filter(function (n) { return n.type === type && n.name === name });
+	};
+
+	var exceptNode = nodeWithTypeName('function', 'except');
+	var catchesNode = nodeWithTypeName('function', 'catches');
+	var doesNotCatchNode = nodeWithTypeName('function', 'doesNotCatch');
+
+	var handle = tracer.trackLogs({ exceptions: true });
+
+	var log = tracer.logDelta(handle, 1);
+	var expectedLog = [{
+		nodeId: exceptNode.id,
+		exception: {},
+	}];
+	t.similar(log, expectedLog);
+	t.equivalent(tracer.logDelta(handle, 1), []);
+
+	setTimeout(function () {
+		t.equivalent(tracer.logDelta(handle, 1), []);
 
 		t.end();
 	}, 200);
