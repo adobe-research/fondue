@@ -25,7 +25,7 @@
 var test = require('tap').test;
 var simulate = require('./helper/simulate');
 
-// report hits only for uncaught exceptions
+// report hits for caught and uncaught exceptions
 test('hits', function (t) {
 	var o = simulate('scripts/exceptions.js');
 	t.ok(o.tracer); t.ok(o.exception);
@@ -47,13 +47,17 @@ test('hits', function (t) {
 	var doesNotCatchNode = nodeWithTypeName('function', 'doesNotCatch');
 
 	var expected = { counts: {} };
-	expected.counts[exceptNode.id] = 1;
+	expected.counts[exceptNode.id] = 2;
+	expected.counts[doesNotCatchNode.id] = 1;
 	t.equivalent(tracer.newExceptions(handle1), expected);
 	t.equivalent(tracer.newExceptions(handle2), expected);
 
 	setTimeout(function () {
-		t.equivalent(tracer.newExceptions(handle1), { counts: {} });
-		t.equivalent(tracer.newExceptions(handle2), { counts: {} });
+		var expected = { counts: {} };
+		expected.counts[exceptNode.id] = 1;
+
+		t.equivalent(tracer.newExceptions(handle1), expected);
+		t.equivalent(tracer.newExceptions(handle2), expected);
 
 		t.end();
 	}, 200);
