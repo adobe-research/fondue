@@ -220,37 +220,45 @@ test('logs (console.log)', function (t) {
 	var tracer = o.tracer;
 	var nodes = tracer.nodes();
 
+	var logTypes = ['log', 'info', 'warn', 'error', 'trace'];
+	var infos = {};
+
+	logTypes.forEach(function (logType) {
+		var info = {};
+		info.functionNode = nodeWithTypeName(nodes, 'function', logType + 'Test');
+		info.callsiteNode = nodeWithTypeName(nodes, 'callsite', 'console.' + logType);
+		info.handle = tracer.trackLogs({ ids: [info.functionNode.id] });
+
+		infos[logType] = info;
+	});
+
+	function checkLogs(logType) {
+		var info = infos[logType];
+
+		var log = tracer.logDelta(info.handle, 3);
+		t.equal(log.length, 2);
+		t.similar(log, [
+			{ nodeId: info.functionNode.id, arguments: [] },
+			{ nodeId: info.callsiteNode.id, arguments: [{ value: { type: 'number', value: 1 } }] },
+		]);
+	}
+
 	var aNode = nodeWithTypeName(nodes, 'function', 'a');
-	var bNode = nodeWithTypeName(nodes, 'function', 'b');
-	var logNode = nodeWithTypeName(nodes, 'callsite', 'console.log');
-	[aNode, bNode, logNode].forEach(t.ok.bind(t));
-
 	var handleA = tracer.trackLogs({ ids: [aNode.id] });
-	var handleB = tracer.trackLogs({ ids: [bNode.id] });
 
-	var logB = tracer.logDelta(handleB, 4);
-	t.equal(logB.length, 2);
-	t.similar(logB, [
-		{ nodeId: bNode.id, arguments: [] },
-		{ nodeId: logNode.id, arguments: [{ value: { type: 'number', value: 1 } }] },
-	]);
+	logTypes.forEach(checkLogs);
 
 	// only return console.logs that are called directly
-	var logA = tracer.logDelta(handleA, 4);
+	var logA = tracer.logDelta(handleA, 2);
 	t.similar(logA, [
 		{ nodeId: aNode.id, arguments: [] },
 	]);
 
 	setTimeout(function () {
-		logB = tracer.logDelta(handleB, 4);
-		t.equal(logB.length, 2);
-		t.similar(logB, [
-			{ nodeId: bNode.id, arguments: [] },
-			{ nodeId: logNode.id, arguments: [{ value: { type: 'number', value: 1 } }] },
-		]);
+		logTypes.forEach(checkLogs);
 
 		// only return console.logs that are called directly
-		logA = tracer.logDelta(handleA, 4);
+		logA = tracer.logDelta(handleA, 2);
 		t.equal(logA.length, 1);
 		t.similar(logA, [
 			{ nodeId: aNode.id, arguments: [] }, // the asynchronous one
