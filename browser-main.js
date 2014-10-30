@@ -1,1 +1,1 @@
-window.fondue = require("./fondue");
+window.fondue = require("./");
