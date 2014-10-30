@@ -64,7 +64,8 @@ function instrumentationPrefix(options) {
 		maxInvocationsPerTick: 4096,
 	});
 
-	// the inline comments below are markers for building the browser version of fondue
+	// the inline comments below are markers for building the browser version of
+	// fondue, where the file contents will be inlined as a string.
 	var tracerSource = /*tracer.js{*/fs.readFileSync(__dirname + '/tracer.js', 'utf8')/*}tracer.js*/;
 	return template(tracerSource, {
 		name: options.name,
