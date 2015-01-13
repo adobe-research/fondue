@@ -261,7 +261,21 @@ function traceFilter(src, options) {
 						nameStart: nameLoc.start,
 						nameEnd: nameLoc.end,
 					});
-					if (node.callee.source() !== 'require') {
+					if (node.callee.source() === "eval") {
+						if (node.arguments.length === 1 && node.arguments[0].type === 'Literal' && typeof(node.arguments[0].value) === 'string') {
+							var path = '<anonymous>';
+							var m = /\/\/# sourceURL=([^\s]+)/.exec(node.arguments[0].value);
+							if (m) {
+								path = m[1];
+							}
+							path = options.path + '-eval-' + path;
+
+							var suboptions = JSON.parse(JSON.stringify(options));
+							suboptions.path = path;
+							var instrumentedEvalSource = traceFilter(node.arguments[0].value, suboptions);
+							node.arguments[0].update(JSON.stringify(String(instrumentedEvalSource)))
+						}
+					} else if (node.callee.source() !== "require") {
 						if (node.callee.type === 'MemberExpression') {
 							if (node.callee.computed) {
 								node.callee.update(' ', options.tracer_name, '.traceFunCall({ this: ', node.callee.object.source(), ', property: ', node.callee.property.source(), ', nodeId: ', JSON.stringify(id), ' })');
