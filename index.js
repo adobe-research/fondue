@@ -186,7 +186,7 @@ function traceFilter(src, options) {
 		// some code looks at the source code for callback functions and does
 		// different things depending on what it finds. since fondue wraps all
 		// anonymous functions, we need to capture the original source code for
-		// the functions so that we can return it from the wrapper function's
+		// those functions so that we can return it from the wrapper function's
 		// toString.
 		falafel(src, { loc: true }, eselector.tester([
 			{

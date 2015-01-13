@@ -288,7 +288,7 @@ if (typeof {name} === 'undefined') {
 	}
 
 	/**
-	 * calls callback with (item, index, collect) where collect is a function
+	 * calls callback with (collect, item, index) where collect is a function
 	 * whose argument should be one of the strings to be de-duped.
 	 * returns an array where each string appears only once.
 	 */
