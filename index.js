@@ -293,7 +293,7 @@ function traceFilter(src, options) {
 		var prologue = options.prefix;
 		prologue += template(/*tracer-stub.js{*/fs.readFileSync(__dirname + '/tracer-stub.js', 'utf8')/*}tracer-stub.js*/, { name: options.tracer_name });
 		if (options.source_map) prologue += '/*mapshere*/';
-		prologue += options.tracer_name + '.add(' + JSON.stringify(options.path) + ', { nodes: ' + JSON.stringify(nodes) + ' });\n\n';
+		prologue += options.tracer_name + '.add(' + JSON.stringify(options.path) + ', ' + JSON.stringify(src) + ', { nodes: ' + JSON.stringify(nodes) + ' });\n\n';
 
 		return {
 			map: function () { return '' },

@@ -74,6 +74,7 @@ if (typeof {name} === 'undefined') {
 
 	var globalThis = undefined;
 
+	var sourceByPath = {};
 	var nodes = []; // objects describing functions, branches, call sites, etc
 	var nodeById = {}; // id(string) -> node
 	var invocationStack = [];
@@ -892,7 +893,8 @@ if (typeof {name} === 'undefined') {
 	/**
 	 * called from the top of every script processed by the rewriter
 	 */
-	this.add = function (path, options) {
+	this.add = function (path, source, options) {
+		sourceByPath[path] = source;
 		nodes.push.apply(nodes, options.nodes);
 		options.nodes.forEach(function (n) { nodeById[n.id] = n; });
 
