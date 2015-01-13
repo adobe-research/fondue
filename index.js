@@ -283,7 +283,7 @@ function traceFilter(src, options) {
 								node.callee.update(' ', options.tracer_name, '.traceFunCall({ this: ', node.callee.object.source(), ', property: "', node.callee.property.source(), '", nodeId: ', JSON.stringify(id), ' })');
 							}
 						} else {
-							node.callee.wrap(options.tracer_name + '.traceFunCall({ func: ', ', nodeId: ' + JSON.stringify(id) + '})');
+							node.callee.wrap(options.tracer_name + '.traceFunCall({ func: (', '), nodeId: ' + JSON.stringify(id) + '})');
 						}
 					}
 				},
