@@ -177,6 +177,7 @@ function traceFilter(src, options) {
 		prefix: '',
 		tracer_name: '__tracer',
 		source_map: false,
+		throw_parse_errors: false,
 	});
 
 	try {
@@ -313,8 +314,12 @@ function traceFilter(src, options) {
 			node.after(options.tracer_name + '.traceFileExit(' + JSON.stringify({ nodeId: nodeId }) + ');', true);
 		}
 	} catch (e) {
-		console.error('exception during parsing', options.path, e.stack);
-		return options.prefix + src;
+		if (options.throw_parse_errors) {
+			throw e;
+		} else {
+			console.error('exception during parsing', options.path, e.stack);
+			return options.prefix + src;
+		}
 	}
 }
 
@@ -327,6 +332,8 @@ function traceFilter(src, options) {
  *   nodejs (false): true to enable Node.js-specific functionality
  *   maxInvocationsPerTick (4096): stop collecting trace information for a tick
  *       with more than this many invocations
+ *   throw_parse_errors (false): if false, parse exceptions are caught and the
+ *       original source code is returned.
  **/
 function instrument(src, options) {
 	options = mergeInto(options, {
@@ -358,6 +365,7 @@ function instrument(src, options) {
 			tracer_name: options.tracer_name,
 			sourceFilename: options.sourceFilename,
 			generatedFilename: options.generatedFilename,
+			throw_parse_errors: options.throw_parse_errors,
 		});
 		var oldToString = m.toString;
 		m.toString = function () {
