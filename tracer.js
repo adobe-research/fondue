@@ -1269,8 +1269,8 @@ if (typeof {name} === 'undefined') {
 		return nodeTracker.track();
 	};
 
-	this.untrackNodes = function () {
-		return nodeTracker.untrack();
+	this.untrackNodes = function (handle) {
+		return nodeTracker.untrack(handle);
 	};
 
 	this.newNodes = function (handle) {
