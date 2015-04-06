@@ -14,7 +14,25 @@ table.api th tt.code {
 </style>
 </head>
 
-<h2>What's fondue?</h2>
+<h1>Fondue documentation</h1>
+
+<div id="toc">
+<ol>
+<li><a href="#section-whats-fondue">What's fondue?</a>
+<li><a href="#section-how-to-trace">How to trace some code</a>
+	<ol>
+	<li><a href="#section-example-01">Example: a script that inspects itself</a>
+	<li><a href="#section-example-02">Example: a script that inspects another script</a>
+	</ol>
+<li><a href="#section-how-to-access">How to access the data (Fondue's API)</a>
+	<ol>
+	<li><a href="#section-api">API Reference</a>
+	</ol>
+<li><a href="#section-fancy">Getting fancy (tracing whole programs, whole web sites, etc)</a>
+</ol>
+</div>
+
+<h2 id="section-whats-fondue">What's fondue?</h2>
 
 <p>Fondue is a real-time program tracing library for JavaScript. You use it if you want to:
 
@@ -25,11 +43,11 @@ table.api th tt.code {
 
 <p>Get the code with <tt class="command">git clone https://github.com/adobe-research/fondue.git</tt> or use it in your Node.js project with <tt class="command">npm install fondue</tt>.
 
-<h2>How to trace some code</h2>
+<h2 id="section-how-to-trace">How to trace some code</h2>
 
 <p>Call <tt class="code">require('fondue').instrument(src, options)</tt>. You pass it the JavaScript code you want to trace as a string, and it returns the same code, but modified so that if you run it, it will store trace data in a global object called <tt>__tracer</tt>.
 
-<h3>Example: a script that inspects itself</h3>
+<h3 id="section-example-01">Example: a script that inspects itself</h3>
 
 <p>Fondue comes with a script <tt>bin/fondue</tt> that calls <tt class="code">instrument(src, { path: ... })</tt> for you automatically. Try saving the following code as <tt>example01.js</tt>:
 
@@ -60,11 +78,11 @@ found a function: printNode at /Users/tom/src/example01.js:6 with id /Users/tom/
 
 <p>If you add more functions to <tt>example01.js</tt> and re-run the commands, you should see that it prints out all the functions you add.
 
-<h3>Example: a script that inspects another script</h3>
+<h3 id="section-example-02">Example: a script that inspects another script</h3>
 
 <p>You can find basically the same example in <a href="playground.html">the Fondue playground</a>. Just hit "Run". You might find it easier to experiment there than on the command-line.
 
-<h2>How to access the data (Fondue's API)</h2>
+<h2 id="section-how-to-access">How to access the data (Fondue's API)</h2>
 
 <p><tt>__tracer</tt> uses a polling data model. As you saw in the example, to get all nodes, first you call <tt class="code">trackNodes()</tt> to get a <tt class="code">handle</tt> object, then you call <tt class="code">newNodes(handle)</tt> to get all the nodes that have been instrumented since the last call to <tt class="code">newNodes</tt>.
 
@@ -79,9 +97,28 @@ var hits5 = __tracer.hitCountDeltas(hitsHandle); // {}
 // ...
 </pre>
 
-<h3>API Reference</h3>
+<h3 id="section-api">API Reference</h3>
 
 <p>I apologize for inconsistencies. The only consumer of this API until recently was my own project, <a href="https://github.com/adobe-research/theseus">Theseus</a>.
+
+<h4>Fondue's API</h4>
+
+<table class="api outlined">
+	<tr>
+		<th>
+			<tt class="code">require('fondue').instrument(src, options)</tt><br />
+			<tt class="code">fondue.instrument(src, options)</tt>
+		</th>
+		<td>
+			<p>Use the first version in Node.js (after <tt>npm install fondue</tt>) and the second version if you include <tt><a href="https://github.com/adobe-research/fondue/blob/master/fondue.browser.js">fondue.browser.js</a></tt> on a web page, which creates a global <tt>fondue</tt> object.
+			<p>These functions take JavaScript source code in the <tt>src</tt> argument and return a string containing an instrumented version of that source code.
+		</td>
+	</tr>
+</table>
+
+<h4><tt>__tracer</tt> API</h4>
+
+<p>Fondue-instrumented code creates a global <tt>__tracer</tt> object that you can also access to get information about that code's execution.
 
 <table class="api outlined">
 	<tr>
@@ -171,7 +208,7 @@ var hits5 = __tracer.hitCountDeltas(hitsHandle); // {}
 
 <p>There are more functions, which I will document soon. <a href="mailto:tom@alltom.com">E-mail me</a> to bug me about it.
 
-<h2>Getting fancy (tracing whole programs, whole web sites, etc)</h2>
+<h2 id="section-fancy">Getting fancy (tracing whole programs, whole web sites, etc)</h2>
 
 <table class="outlined">
 	<tr>
