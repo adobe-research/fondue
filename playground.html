@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fondue playground</title>
+<style>
+
+@import url(style.css);
+
+textarea {
+	width: 95%;
+	height: 150px;
+}
+
+div#left-column, div#right-column {
+	width: 40%;
+	float: left;
+	padding: 10px;
+	margin-right: 10px;
+	background: #eee;
+}
+
+h2 {
+	margin-top: 0;
+}
+
+div#output {
+	min-height: 30px;
+	padding: 1px;
+	border: 1px solid #aaa;
+}
+
+</style>
+</head>
+
+<h1>Fondue playground</h1>
+
+<ol>
+<li>Type code on the left.
+<li>Press the 'Run' button on the right.
+</ol>
+
+<div id="container">
+	<div id="left-column">
+		<h2>Input</h2>
+
+		<p><label>JavaScript source code to trace:<br />
+		<textarea id="traced-source">function fib(n) {
+	if (n &lt; 2) {
+		return n;
+	} else {
+		return fib(n - 2) + fib(n - 1);
+	}
+}
+
+[0, 1, 2, 3, 4, 5].forEach(function (n) {
+	console.log('fib(' + n + ') = ' + fib(n));
+});</textarea></label>
+
+		<p><label>Other JavaScript source code (won't be traced):<br />
+		<textarea id="untraced-source">var nodesHandle = __tracer.trackNodes();
+$('#output').empty();
+var $list = $('&lt;ul&gt;').appendTo('#output');
+__tracer.newNodes(nodesHandle).forEach(printNode);
+
+function printNode(node) {
+	if (node.type === 'function') {
+		$('&lt;li&gt;').appendTo($list)
+			.text('function: ' + node.name + ' at ' + node.path + ':' + node.start.line + ' with id ' + node.id);
+	}
+}</textarea></label><br />
+		Trace information will be available in the global <tt class="code">__tracer</tt> object. See <a href="./">the documentation</a> if you need help using its API.
+
+		<p>You can use jQuery. <tt class="code">$('#output')</tt> (the green box below) may be handy for testing.
+
+		<p><button id="run-button">Run</button>
+
+		<p>You may need to reload this page if things get crazy.
+	</div>
+
+	<div id="right-column">
+		<h2>Output</h2>
+
+		<p><label>Instrumented source code:<br />
+		<textarea id="output-source"></textarea></label>
+
+		<p>Debugging area:
+		<div id="output" class="output"></div>
+	</div>
+
+	<div style="clear: both"></div>
+</div>
+
+<script src="jquery-1.11.2.min.js"></script>
+<script src="fondue.browser.js"></script>
+<script>
+$(function () {
+	$('#run-button').on('click', function () {
+		try {
+			var src = fondue.instrument($('#traced-source').val(), {
+				include_prefix: true,
+				throw_parse_errors: true,
+			});
+		} catch (e) {
+			$('#output-source').val(String(e));
+			return;
+		}
+		src += '\n\n' + $('#untraced-source').val();
+		$('#output-source').val(src);
+
+		window.__tracer = undefined;
+		eval(src);
+	});
+});
+</script>

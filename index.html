@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fondue documentation</title>
+<style>
+
+@import url(style.css);
+
+table.api th tt.code {
+	white-space: nowrap;
+}
+
+</style>
+</head>
+
+<h2>What's fondue?</h2>
+
+<p>Fondue is a real-time program tracing library for JavaScript. You use it if you want to:
+
+<ul>
+<li>Visualize the function calls in a program
+<li>Get a graph of all the files and functions that are defined in a program
+</ul>
+
+<p>Get the code with <tt class="command">git clone https://github.com/adobe-research/fondue.git</tt> or use it in your Node.js project with <tt class="command">npm install fondue</tt>.
+
+<h2>How to trace some code</h2>
+
+<p>Call <tt class="code">require('fondue').instrument(src, options)</tt>. You pass it the JavaScript code you want to trace as a string, and it returns the same code, but modified so that if you run it, it will store trace data in a global object called <tt>__tracer</tt>.
+
+<h3>Example: a script that inspects itself</h3>
+
+<p>Fondue comes with a script <tt>bin/fondue</tt> that calls <tt class="code">instrument(src, { path: ... })</tt> for you automatically. Try saving the following code as <tt>example01.js</tt>:
+
+<pre class="code">// example01.js
+
+var nodesHandle = __tracer.trackNodes();
+__tracer.newNodes(nodesHandle).forEach(printNode);
+
+function printNode(node) {
+	if (node.type === 'function') {
+		console.log('found a function: ' + node.name + ' at ' + node.path + ':' + node.start.line + ' with id ' + node.id);
+	}
+}</pre>
+
+<p>Then execute the following commands:
+
+<ol>
+<li><tt class="command">./fondue/bin/fondue example01.js > example01.fondue.js</tt>
+<li><tt class="command">node example01.fondue.js</tt>
+</ol>
+
+<p>It should print out something like this:
+
+<pre class="output">found a function: [log] at [built-in]:0 with id log
+found a function: printNode at /Users/tom/src/example01.js:6 with id /Users/tom/src/example01.js-function-6-0-10-1</pre>
+
+<p>(<tt>log</tt> is a special function representing <tt>console.log</tt>. You can ignore it in your scripts if you want.)
+
+<p>If you add more functions to <tt>example01.js</tt> and re-run the commands, you should see that it prints out all the functions you add.
+
+<h3>Example: a script that inspects another script</h3>
+
+<p>You can find basically the same example in <a href="playground.html">the Fondue playground</a>. Just hit "Run". You might find it easier to experiment there than on the command-line.
+
+<h2>How to access the data (Fondue's API)</h2>
+
+<p><tt>__tracer</tt> uses a polling data model. As you saw in the example, to get all nodes, first you call <tt class="code">trackNodes()</tt> to get a <tt class="code">handle</tt> object, then you call <tt class="code">newNodes(handle)</tt> to get all the nodes that have been instrumented since the last call to <tt class="code">newNodes</tt>.
+
+<p>As another example, <tt class="code">trackHits()</tt> gives you a handle for tracking the hit counts of all functions. <tt class="code">hitCountDeltas(handle)</tt> gives you an object containing the counts of all function calls that occurred since the last call to <tt class="code">hitCountDeltas(handle)</tt> for that handle:
+
+<pre class="code">var hitsHandle = __tracer.trackHits();
+var hits1 = __tracer.hitCountDeltas(hitsHandle); // { 'func-id-1' : 1, 'func-id-2' : 3 }
+var hits2 = __tracer.hitCountDeltas(hitsHandle); // {}
+var hits3 = __tracer.hitCountDeltas(hitsHandle); // {}
+var hits4 = __tracer.hitCountDeltas(hitsHandle); // { 'func-id-2' : 1 }
+var hits5 = __tracer.hitCountDeltas(hitsHandle); // {}
+// ...
+</pre>
+
+<h3>API Reference</h3>
+
+<p>I apologize for inconsistencies. The only consumer of this API until recently was my own project, <a href="https://github.com/adobe-research/theseus">Theseus</a>.
+
+<table class="api outlined">
+	<tr>
+		<th><tt class="code">__tracer.version()</tt></th>
+		<td>Returns a string like <tt>"0.6.1"</tt> with the version of Fondue being used.</td>
+	</tr>
+	<tr>
+		<th>
+			<tt class="code">handle = __tracer.trackNodes()</tt><br />
+			<tt class="code">nodes = __tracer.newNodes(handle)</tt>
+		</th>
+		<td>
+			<p>Get all known trace points in the program (functions, function call sites, etc).
+
+			<table class="outlined">
+				<tr>
+					<th><tt>id</tt></th>
+					<td>Unique string identifier for this node. It currently consists of the path, start, and end locations in the file, separated by dashes, but please don't rely on that.</td>
+				</tr>
+				<tr>
+					<th><tt>type</tt></th>
+					<td>The node type as a string. Currently one of <tt>"toplevel"</tt>, <tt>"function"</tt>, or <tt>"callsite"</tt>.</td>
+				</tr>
+				<tr>
+					<th><tt>name</tt></th>
+					<td>A pretty name for the node. For named functions, it's the name. For anonymous functions, fondue tries to make something appropriate like <tt>"(timer handler (200ms))"</tt>.</td>
+				</tr>
+				<tr>
+					<th><tt>path</tt></th>
+					<td>Path of the file the node is in, or <tt>"&lt;anonymous&gt;"</tt>.</td>
+				</tr>
+				<tr>
+					<th><tt>start</tt></th>
+					<td>Start location in the file, like <tt class="code">{"line": 1, "column": 0}</tt>.</td>
+				</tr>
+				<tr>
+					<th><tt>end</tt></th>
+					<td>End location in the file, like <tt class="code">{"line": 7, "column": 1}</tt>.</td>
+				</tr>
+				<tr>
+					<th><tt>params</tt></th>
+					<td>
+						<p>An array of the function's arguments (present only if <tt>type</tt> is <tt>function</tt>).
+
+						<table class="outlined">
+							<tr>
+								<th><tt>name</tt></th>
+								<td>Name of the argument</td>
+							</tr>
+							<tr>
+								<th><tt>start</tt></th>
+								<td>Start location in the file, like <tt class="code">{"line": 1, "column": 0}</tt>.</td>
+							</tr>
+							<tr>
+								<th><tt>end</tt></th>
+								<td>End location in the file, like <tt class="code">{"line": 7, "column": 1}</tt>.</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<th>
+			<tt class="code">handle = __tracer.trackHits()</tt><br />
+			<tt class="code">hits = __tracer.hitCountDeltas(handle)</tt>
+		</th>
+		<td>
+			<p>Get a map from node id to the number of times the node was executed since the last call to <tt>hitCountDeltas</tt> with the given <tt>handle</tt>. Only the ids of functions that actually executed will be present. So, if no code has been executed, <tt>hitCountDeltas</tt> will return an empty object.
+
+			<p>Example return value of <tt>hitCountDeltas</tt>: <tt class="code">{ 'func-id-1' : 1, 'func-id-2' : 3 }</tt>.
+		</td>
+	</tr>
+	<tr>
+		<th>
+			<tt class="code">handle = __tracer.trackExceptions()</tt><br />
+			<tt class="code">hits = __tracer.newExceptions(handle)</tt>
+		</th>
+		<td>
+			<p>Like <tt>trackHits</tt> and <tt>hitCountDeltas</tt>, except it only includes counts for nodes that threw an exception. The return value is also slightly different.
+
+			<p>Example return value of <tt>newExceptions</tt>: <tt class="code">{ counts: { 'func-id-1' : 1, 'func-id-2' : 3 }}</tt>.
+		</td>
+	</tr>
+</table>
+
+<p>There are more functions, which I will document soon. <a href="mailto:tom@alltom.com">E-mail me</a> to bug me about it.
+
+<h2>Getting fancy (tracing whole programs, whole web sites, etc)</h2>
+
+<table class="outlined">
+	<tr>
+		<th>Instrumented code runs in</th>
+		<th>Visualization code runs in</th>
+		<th>Strategy</th>
+	</tr>
+	<tr>
+		<td>Browser</td>
+		<td>Browser</td>
+		<td>Pre-process the code with <tt>bin/fondue</tt> (as in the example above) or with <tt>require('fondue').instrument(src, options)</tt> in Node.js, then execute the output on a web page with a <tt>&lt;script&gt;</tt> tag. That creates a global <tt>__tracer</tt> on which you can call the above methods directly from the same page. The "script that inspects itself" example on this page works this way.</td>
+	</tr>
+	<tr>
+		<td>Browser</td>
+		<td>Browser</td>
+		<td>Pre-process the code with <tt>fondue.instrument(src, options)</tt> on a web page itself after including <tt><a href="https://github.com/adobe-research/fondue/blob/master/fondue.browser.js">fondue.browser.js</a></tt>, the browser build of Fondue. Execute the output with <tt>eval(src)</tt>. That also creates a global <tt>__tracer</tt> on which you can call the above methods directly. <a href="playground.html">The Fondue playground</a> works this way.</td>
+	</tr>
+	<tr>
+		<td>Browser</td>
+		<td>Browser</td>
+		<td>Drop <a href="https://github.com/alltom/fondue-middleware">fondue-middleware</a> into a Node.js server. When it detects that you're serving a JavaScript file, or an HTML file with embedded <tt>&lt;script&gt;</tt> tags, it will automatically process the scripts with Fondue. When that code executes on the web page, that creates a global <tt>__tracer</tt> object on which you can call the above methods directly.</td>
+	</tr>
+	<tr>
+		<td>Node.js</td>
+		<td>Browser</td>
+		<td>Run the Node.js app with <tt>node-theseus</tt> instead of <tt>node</tt> (first, <tt>npm install -g node-theseus</tt>), which starts a WebSocket server that exposes the <tt>__tracer</tt> object via a simple RPC API. <a href="https://github.com/alltom/node-theseus-d3">Here's an example project that displays information about a running Node.js process with d3</a>.</td>
+	</tr>
+</table>

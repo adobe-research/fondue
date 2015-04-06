@@ -1,0 +1,41 @@
+body {
+	margin: 0;
+	padding: 30px;
+	line-height: 170%;
+}
+li {
+	margin-bottom: 10px;
+}
+tt.command, tt.code {
+	padding: 5px;
+}
+tt.command {
+	border: 1px solid #ccc;
+	background-color: #ffdfdf;
+}
+tt.code {
+	background-color: #dfdfff;
+}
+div.indented {
+	margin-left: 30px;
+}
+pre {
+	margin: 10px;
+	padding: 20px;
+}
+pre.code {
+	background-color: #dfdfff;
+}
+pre.output, div.output {
+	background-color: #dfffdf;
+}
+table.outlined th, table.outlined td {
+	border: 1px solid black;
+}
+th, td {
+	text-align: left;
+	vertical-align: top;
+}
+th > p:first-child, td > p:first-child {
+	margin-top: 0;
+}
