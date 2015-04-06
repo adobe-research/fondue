@@ -7,7 +7,7 @@
 
 @import url(style.css);
 
-table.api th tt.code {
+table.api tt {
 	white-space: nowrap;
 }
 
@@ -111,7 +111,48 @@ var hits5 = __tracer.hitCountDeltas(hitsHandle); // {}
 		</th>
 		<td>
 			<p>Use the first version in Node.js (after <tt>npm install fondue</tt>) and the second version if you include <tt><a href="https://github.com/adobe-research/fondue/blob/master/fondue.browser.js">fondue.browser.js</a></tt> on a web page, which creates a global <tt>fondue</tt> object.
+
 			<p>These functions take JavaScript source code in the <tt>src</tt> argument and return a string containing an instrumented version of that source code.
+
+			<p><tt>options</tt> is an object (or null) with any the following keys:
+
+			<table class="outlined">
+				<tr>
+					<th>Key</th>
+					<th>Default value</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<th><tt>path</tt></th>
+					<th><tt>"&lt;anonymous&gt;"</tt></th>
+					<td>The path of the source code being instrumented. It doesn't load the code from that page, only embeds that information as meta-data, so it can be whatever you want.</td>
+				</tr>
+				<tr>
+					<th><tt>include_prefix</tt></th>
+					<th><tt>true</tt></th>
+					<td>Whether to include the source code underlying the <tt>__tracer</tt> object. It's okay for this code to be included multiple times, so always leaving it on is okay. It's just kind of big.</td>
+				</tr>
+				<tr>
+					<th><tt>tracer_name</tt></th>
+					<th><tt>__tracer</tt></th>
+					<td>The name to use for the global object containing the trace information.</td>
+				</tr>
+				<tr>
+					<th><tt>nodejs</tt></th>
+					<th><tt>false</tt></th>
+					<td>If <tt>src</tt> will be executed in Node.js (not the browser), then set this to true to enable some Node.js-specific functionality.</td>
+				</tr>
+				<tr>
+					<th><tt>maxInvocationsPerTick</tt></th>
+					<th><tt>4096</tt></th>
+					<td>When more than this many trace points (nodes) are executed in a single tick of the JavaScript VM, fondue will stop storing trace information until the next tick. This prevents intense calculation from filling all your RAM.</td>
+				</tr>
+				<tr>
+					<th><tt>throw_parse_errors</tt></th>
+					<th><tt>false</tt></th>
+					<td>Whether to throw parse errors as exceptions, or just pring them with <tt>console.error</tt> and attempt to continue. By default, when there's a parse error, the code is just passed through without instrumentation.</td>
+				</tr>
+			</table>
 		</td>
 	</tr>
 </table>
