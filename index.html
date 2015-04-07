@@ -150,7 +150,7 @@ var hits5 = __tracer.hitCountDeltas(hitsHandle); // {}
 				<tr>
 					<th><tt>throw_parse_errors</tt></th>
 					<th><tt>false</tt></th>
-					<td>Whether to throw parse errors as exceptions, or just pring them with <tt>console.error</tt> and attempt to continue. By default, when there's a parse error, the code is just passed through without instrumentation.</td>
+					<td>Whether to throw parse errors as exceptions, or just print them with <tt>console.error</tt> and attempt to continue. By default, when there's a parse error, the code is just passed through without instrumentation.</td>
 				</tr>
 			</table>
 		</td>
@@ -260,21 +260,26 @@ var hits5 = __tracer.hitCountDeltas(hitsHandle); // {}
 	<tr>
 		<td>Browser</td>
 		<td>Browser</td>
-		<td>Pre-process the code with <tt>bin/fondue</tt> (as in the example above) or with <tt>require('fondue').instrument(src, options)</tt> in Node.js, then execute the output on a web page with a <tt>&lt;script&gt;</tt> tag. That creates a global <tt>__tracer</tt> on which you can call the above methods directly from the same page. The "script that inspects itself" example on this page works this way.</td>
+		<td><strong>Pre-processing.</strong> Pre-process the code with <tt>bin/fondue</tt> (as in the example above) or with <tt>require('fondue').instrument(src, options)</tt> in Node.js, then execute the output on a web page with a <tt>&lt;script&gt;</tt> tag. That creates a global <tt>__tracer</tt> on which you can call the above methods directly from the same page. The "script that inspects itself" example on this page works this way.</td>
+	</tr>
+	<tr>
+		<td>Node.js</td>
+		<td>Node.js</td>
+		<td><strong>Pre-processing.</strong> Same as with the Browser/Browser case above. <tt>eval()</tt> code that has been run through the <tt>instrument()</tt> function and check the global <tt>__tracer</tt> object.</td>
 	</tr>
 	<tr>
 		<td>Browser</td>
 		<td>Browser</td>
-		<td>Pre-process the code with <tt>fondue.instrument(src, options)</tt> on a web page itself after including <tt><a href="https://github.com/adobe-research/fondue/blob/master/fondue.browser.js">fondue.browser.js</a></tt>, the browser build of Fondue. Execute the output with <tt>eval(src)</tt>. That also creates a global <tt>__tracer</tt> on which you can call the above methods directly. <a href="playground.html">The Fondue playground</a> works this way.</td>
+		<td><strong>Dynamic instrumentation.</strong> Process the code with <tt>fondue.instrument(src, options)</tt> on a web page itself after including <tt><a href="https://github.com/adobe-research/fondue/blob/master/fondue.browser.js">fondue.browser.js</a></tt>, the browser build of Fondue. Execute the output with <tt>eval(src)</tt>. That also creates a global <tt>__tracer</tt> on which you can call the above methods directly. <a href="playground.html">The Fondue playground</a> works this way.</td>
 	</tr>
 	<tr>
 		<td>Browser</td>
 		<td>Browser</td>
-		<td>Drop <a href="https://github.com/alltom/fondue-middleware">fondue-middleware</a> into a Node.js server. When it detects that you're serving a JavaScript file, or an HTML file with embedded <tt>&lt;script&gt;</tt> tags, it will automatically process the scripts with Fondue. When that code executes on the web page, that creates a global <tt>__tracer</tt> object on which you can call the above methods directly.</td>
+		<td><strong>Node.js middleware.</strong> Drop <a href="https://github.com/alltom/fondue-middleware">fondue-middleware</a> into a Node.js server. When it detects that you're serving a JavaScript file, or an HTML file with embedded <tt>&lt;script&gt;</tt> tags, it will automatically process the scripts with Fondue. When that code executes on the web page, that creates a global <tt>__tracer</tt> object on which you can call the above methods directly.</td>
 	</tr>
 	<tr>
 		<td>Node.js</td>
 		<td>Browser</td>
-		<td>Run the Node.js app with <tt>node-theseus</tt> instead of <tt>node</tt> (first, <tt>npm install -g node-theseus</tt>), which starts a WebSocket server that exposes the <tt>__tracer</tt> object via a simple RPC API. <a href="https://github.com/alltom/node-theseus-d3">Here's an example project that displays information about a running Node.js process with d3</a>.</td>
+		<td><strong>Remote Node.js instrumentation.</strong> Run the Node.js app with <tt>node-theseus</tt> instead of <tt>node</tt> (first, <tt>npm install -g node-theseus</tt>), which starts a WebSocket server that exposes the <tt>__tracer</tt> object via a simple RPC API. <a href="https://github.com/alltom/node-theseus-d3">Here's an example project that displays information about a running Node.js process with d3</a>.</td>
 	</tr>
 </table>
