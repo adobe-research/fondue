@@ -32,6 +32,8 @@ table.api tt {
 </ol>
 </div>
 
+<p>You can follow along and play with Fondue in your browser using <a href="playground.html">The Fondue playground</a>.
+
 <h2 id="section-whats-fondue">What's fondue?</h2>
 
 <p>Fondue is a real-time program tracing library for JavaScript. You use it if you want to:
@@ -243,6 +245,155 @@ var hits5 = __tracer.hitCountDeltas(hitsHandle); // {}
 			<p>Like <tt>trackHits</tt> and <tt>hitCountDeltas</tt>, except it only includes counts for nodes that threw an exception. The return value is also slightly different.
 
 			<p>Example return value of <tt>newExceptions</tt>: <tt class="code">{ counts: { 'func-id-1' : 1, 'func-id-2' : 3 }}</tt>.
+		</td>
+	</tr>
+	<tr>
+		<th>
+			<tt class="code">handle = __tracer.trackLogs(query)</tt><br />
+			<tt class="code">invocations = __tracer.logDelta(handle, maxResults)</tt>
+		</th>
+		<td>
+			<p><tt>invocations</tt> will be a chronological array of invocations that match the given query. For example, if your query matches one function, then the results will be a list of all the times that function was called, including the values of the arguments. If your query matches multiple functions, you'll get a list of the times that either function was called.
+
+			<p><tt>query</tt> is an object describing which invocations you want to be returned. You will get a union of all matched invocations. <tt>query</tt> accepts the following keys:
+
+			<table class="outlined">
+				<tr>
+					<th><tt>ids</tt></th>
+					<td><strong>(optional)</strong> An array of node IDs that you want the invocations of. These are strings that you might get from <tt>node.id</tt> on a node you get from <tt>trackNodes</tt>.</td>
+				</tr>
+				<tr>
+					<th><tt>logs</tt></th>
+					<td><strong>(optional)</strong> A boolean, <tt>true</tt> if you want all invocations of the special <tt>[log]</tt> function that represents <tt>console.log</tt>. With this you can recreate the terminal output of a program.</td>
+				</tr>
+				<tr>
+					<th><tt>eventNames</tt></th>
+					<td><strong>(optional)</strong> An array of strings, each one the name of an event whose invocations to include. See <tt>trackEpochs</tt> for a description of what an event is.</td>
+				</tr>
+				<tr>
+					<th><tt>exceptions</tt></th>
+					<td><strong>(optional)</strong> A boolean, <tt>true</tt> if all trace points that threw an exception should be included.</td>
+				</tr>
+			</table>
+
+			<p>Each object in the <tt>invocations</tt> array has the following keys:
+
+			<table class="outlined">
+				<tr>
+					<th><tt>timestamp</tt></th>
+					<td>The result of calling <tt>(new Date).getTime()</tt> at the time the node was invoked.</td>
+				</tr>
+				<tr>
+					<th><tt>tick</tt></th>
+					<td>A number that goes up by one every time a trace point is reached. Primarily for use internally to enforce <tt>maxInvocationsPerTick</tt>. This shouldn't have been called "tick" because that word usually refers to one run of the JavaScript event loop, and that's how it's used everywhere else in this document.</td>
+				</tr>
+				<tr>
+					<th><tt>invocationId</tt></th>
+					<td>A unique string identifier for this invocation.</td>
+				</tr>
+				<tr>
+					<th><tt>parents</tt></th>
+					<td>
+						<p>An array of objects representing synchronous or asynchronous parents in the call graph. Only parent invocations that are also matched by the query will be included. This is so that you can render these nodes as a graph without edges that go nowhere. Each parent object has the following keys:
+
+						<table class="outlined">
+							<tr>
+								<th><tt>invocationId</tt></th>
+								<td>The <tt>invocationId</tt> of the parent invocation</td>
+							</tr>
+							<tr>
+								<th><tt>type</tt></th>
+								<td>
+									<p>A string, either <tt>"call"</tt> (synchronous call chain) or <tt>"async"</tt> (asynchronous call chain).
+
+									<p>An example of an <tt>"async"</tt> parent would be if you had this code:
+									<pre class="code">function foo() {
+	setTimeout(function bar() { /* ... */ });
+}</pre>
+									<p>Then invocations of <tt>foo()</tt> would be <tt>"async"</tt> parents of invocations to <tt>bar()</tt>. <tt>foo()</tt> doesn't call <tt>bar()</tt> directly, but <tt>bar()</tt>'s closure gets created inside of <tt>foo()</tt>, so <tt>foo()</tt> is considered a parent.
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<th><tt>topLevelInvocationId</tt></th>
+					<td>Identifier of the invocation at the top of the stack when this invocation occurred. For example, when <tt>setTimeout(function foo() { }, 100)</tt> fires, function <tt>foo</tt> will be at the top of the stack, and every function that's called synchronously by <tt>foo</tt> will have the ID of that invocation of <tt>foo</tt> as its <tt>topLevelInvocationId</tt>.</td>
+				</tr>
+				<tr>
+					<th><tt>nodeId</tt></th>
+					<td>Identifier of the node that was invoked (e.g. <tt>node.id</tt> of a node you got from <tt>trackNodes</tt>).</td>
+				</tr>
+				<tr>
+					<th><tt>arguments</tt></th>
+					<td>
+						<p>This key is only present if the node's type was <tt>function</tt>. It's an array of objects representing each argument value that was passed to the function, in order. Each object has these keys:
+
+						<table class="outlined">
+							<tr>
+								<th><tt>name</tt></th>
+								<td><strong>(optional)</strong> The name of the argument according to the function definition. If you define <tt>function foo(a) { }</tt> and call it like <tt>foo(1, 2)</tt>, then the object in this array for the first argument will have <tt>"a"</tt> as the <tt>name</tt> for the first argument, and no <tt>name</tt> for the second argument.</td>
+							</tr>
+							<tr>
+								<th><tt>value</tt></th>
+								<td>
+									<p>An object describing the value that was passed into the function. This isn't the object itself, but a JSON-friendly description and summary. Each object looks like this:
+
+									<table class="outlined">
+										<tr>
+											<th><tt>type</tt></th>
+											<td>
+												<p>A string, the result of <tt class="code">typeof object</tt> with some exceptions:
+												<ul>
+												<li><tt>typeof document.all</tt> (and possibly other objects) claims to be <tt>undefined</tt>, but Fondue calls it an <tt>object</tt>.
+												<li>The <tt>type</tt> of <tt class="code">null</tt> is <tt>"null"</tt>.
+												</ul>
+											</td>
+										</tr>
+										<tr>
+											<th><tt>value</tt></th>
+											<td><strong>(optional)</strong> If it's a simple, JSONifiable value like a number, boolean, or string, then <tt>value</tt> will simply be that number or string.</td>
+										</tr>
+										<tr>
+											<th><tt>preview</tt></th>
+											<td><strong>(optional)</strong> If present, this is a short string summary of the object. For example, for an array it might be <tt>"[Array:6]"</tt>.</td>
+										</tr>
+										<tr>
+											<th><tt>ownProperties</tt></th>
+											<td>
+												<p><strong>(optional)</strong> For objects, this is an object whose keys are all the keys from the original object for which <tt>hasOwnProperty</tt> is true. The values are objects just like this one, with <tt>type</tt>, <tt>value</tt>, <tt>preview</tt>, <tt>ownProperties</tt>, and <tt>truncated</tt> keys.
+
+												<p>There's currently no way to see an object's prototype.
+
+												<p>Fondue will not let this structure recurse indefinitely. See <tt>truncated</tt>.
+											</td>
+										</tr>
+										<tr>
+											<th><tt>truncated</tt></th>
+											<td>
+												<p><strong>(optional)</strong> Fondue will not let <tt>ownProperties</tt> recurse indefinitely. Once it detects that its representation of this object has reached a certain size, it stores only truncated versions of each object it comes across. If this key is present, then this object didn't make the cut.
+
+												<p>The value of <tt>truncated</tt> is an object with these keys:
+
+												<table class="outlined">
+													<tr>
+														<th><tt>length</tt></th>
+														<td><strong>(optional)</strong> If present, this is an object like <tt class="code">{ amount: 4 }</tt>, containing how many items from the end of the <tt>Buffer</tt> were omitted from the representation.</td>
+													</tr>
+													<tr>
+														<th><tt>keys</tt></th>
+														<td><strong>(optional)</strong> If present, this is an object like <tt class="code">{ amount: 4 }</tt>, containing how many keys from the object were omitted from the representation. Missing array values are also counted here.</td>
+													</tr>
+												</table>
+											</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
 		</td>
 	</tr>
 </table>
