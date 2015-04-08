@@ -26,5 +26,8 @@
 	"scripts" : {
 		"test" : "tap test/test-*.js",
 		"build-browser" : "node build-browser.js"
+	},
+	"bin" : {
+		"node-theseus" : "./bin/fondue"
 	}
 }
