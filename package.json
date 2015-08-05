@@ -1,33 +1,35 @@
 {
-	"name" : "fondue",
-	"description" : "rewrites JavaScript code to collect partial execution traces",
-	"license" : "MIT",
-	"author" : "Tom Lieber <tom@alltom.com>",
-	"version" : "0.6.1",
-	"main" : "./index",
-	"repository" : {
-		"type" : "git",
-		"url" : "https://github.com/adobe-research/fondue.git"
-	},
-	"dependencies" : {
-		"falafel" : "0.1.4",
-		"falafel-map" : "0.3.2",
-		"esprima-selector" : "~0.0.3",
-		"falafel-helpers" : "~0.0.3"
-	},
-	"devDependencies" : {
-		"tap" : "0.4.x"
-	},
-	"keywords" : [
-		"source",
-		"trace",
-		"instrumentation"
-	],
-	"scripts" : {
-		"test" : "tap test/test-*.js",
-		"build-browser" : "node build-browser.js"
-	},
-	"bin" : {
-		"node-theseus" : "./bin/fondue"
-	}
+  "name": "fondue",
+  "description": "rewrites JavaScript code to collect partial execution traces",
+  "license": "MIT",
+  "author": "Tom Lieber <tom@alltom.com>",
+  "version": "0.6.1",
+  "main": "./index",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe-research/fondue.git"
+  },
+  "dependencies": {
+    "falafel": "0.1.4",
+    "falafel-map": "0.3.2",
+    "esprima-selector": "~0.0.3",
+    "falafel-helpers": "~0.0.3",
+    "http-proxy": "1.8.x",
+    "express": "3.3.x"
+  },
+  "devDependencies": {
+    "tap": "0.4.x"
+  },
+  "keywords": [
+    "source",
+    "trace",
+    "instrumentation"
+  ],
+  "scripts": {
+    "test": "tap test/test-*.js",
+    "build-browser": "node build-browser.js"
+  },
+  "bin": {
+    "node-theseus": "./bin/fondue"
+  }
 }
