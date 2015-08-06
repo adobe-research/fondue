@@ -182,6 +182,7 @@ function traceFilter(src, options) {
 
 	try {
 		var nodes = [];
+    var preNodes = {};
 		var functionSources = {};
 
 		// some code looks at the source code for callback functions and does
@@ -189,15 +190,55 @@ function traceFilter(src, options) {
 		// anonymous functions, we need to capture the original source code for
 		// those functions so that we can return it from the wrapper function's
 		// toString.
+
+    //TODO - Callbacks here are not async, therefore are not callbacks!
 		falafel(src, { loc: true }, eselector.tester([
 			{
 				selector: '.function',
 				callback: function (node) {
 					var id = makeId('function', options.path, node.loc);
 					functionSources[id] = node.source();
-				},
+				}
 			}
 		]));
+
+
+    falafel(src, { loc: true }, helpers.wrap(eselector.tester([
+			{
+				selector: 'program',
+				callback: function (node) {
+					var id = makeId('toplevel', options.path, node.loc);
+          node.originalSource = node.source() + " ";
+          preNodes[id] = node;
+				}
+			},
+			{
+				selector: '.function > block',
+				callback: function (node) {
+					var id = makeId('function', options.path, node.parent.loc);
+          node.originalSource = node.source() + " ";
+          preNodes[id] = node;
+				}
+			},
+			{
+				selector: 'expression.function',
+				callback: function (node) {
+					if (node.parent.type !== 'Property' || node.parent.kind === 'init') {
+            var id = makeId('function', options.path, node.loc);
+            node.originalSource = node.source() + " ";
+            preNodes[id] = node;
+					}
+				}
+			},
+			{
+				selector: '.call',
+				callback: function (node) {
+					var id = makeId('callsite', options.path, node.loc);
+          node.originalSource = node.source() + " ";
+          preNodes[id] = node;
+				}
+			}
+		])));
 
 		// instrument the source code
 		var instrumentedSrc = falafel(src, { loc: true }, helpers.wrap(eselector.tester([
@@ -210,6 +251,7 @@ function traceFilter(src, options) {
 						start: node.loc.start,
 						end: node.loc.end,
 						id: id,
+            originalSource:preNodes[id].originalSource,
 						type: 'toplevel',
 						name: '(' + basename(options.path) + ' toplevel)',
 					});
@@ -228,6 +270,7 @@ function traceFilter(src, options) {
 						start: node.parent.loc.start,
 						end: node.parent.loc.end,
 						id: id,
+            originalSource:preNodes[id].originalSource,
 						type: 'function',
 						name: concoctFunctionName(node.parent),
 						params: params,
@@ -252,11 +295,12 @@ function traceFilter(src, options) {
 				callback: function (node) {
 					var id = makeId('callsite', options.path, node.loc);
 					var nameLoc = (node.callee.type === 'MemberExpression') ? node.callee.property.loc : node.callee.loc;
-					nodes.push({
+          nodes.push({
 						path: options.path,
 						start: node.loc.start,
 						end: node.loc.end,
 						id: id,
+            originalSource:preNodes[id].originalSource,
 						type: 'callsite',
 						name: node.callee.source(),
 						nameStart: nameLoc.start,
@@ -277,6 +321,7 @@ function traceFilter(src, options) {
 							node.arguments[0].update(JSON.stringify(String(instrumentedEvalSource)))
 						}
 					} else if (node.callee.source() !== "require") {
+						node.callee.originalSource = node.callee.source();
 						if (node.callee.type === 'MemberExpression') {
 							if (node.callee.computed) {
 								node.callee.update(' ', options.tracer_name, '.traceFunCall({ this: ', node.callee.object.source(), ', property: ', node.callee.property.source(), ', nodeId: ', JSON.stringify(id), ' })');
@@ -298,7 +343,9 @@ function traceFilter(src, options) {
 
 		return {
 			map: function () { return '' },
-			toString: function () { return prologue + instrumentedSrc },
+			toString: function () {
+        return prologue + instrumentedSrc
+      }
 		};
 
 		function traceEntry(node, nodeId, args) {
