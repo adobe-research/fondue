@@ -25,8 +25,8 @@
 var basename = require('path').basename;
 var falafel = require('falafel');
 var falafelMap = require('falafel-map');
-var eselector = require('esprima-selector');
-var helpers = require('falafel-helpers');
+var eselector = require('../esprima-selector');
+var helpers = require('../falafel-helpers');
 var fs = require('fs');
 
 // adds keys from options to defaultOptions, overwriting on conflicts & returning defaultOptions

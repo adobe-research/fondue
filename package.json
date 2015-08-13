@@ -12,8 +12,6 @@
   "dependencies": {
     "falafel": "0.1.4",
     "falafel-map": "0.3.2",
-    "esprima-selector": "~0.0.3",
-    "falafel-helpers": "~0.0.3",
     "http-proxy": "1.8.x",
     "express": "3.3.x"
   },
