@@ -29,9 +29,10 @@ var http = require("http");
 var fondueMiddleware = require("../fondueMiddleware");
 
 var listenPort = 9000;
-//var proxiedDomain = "http://54.175.112.172";
-var proxiedDomain = "http://127.0.0.1";
-var proxiedPort = 3000;
+var proxiedDomain = "http://www.amazon.com";
+//var proxiedDomain = "http://127.0.0.1";
+var proxiedPort = 80;
+//var proxiedPort = 3000;
 
 console.log("starting a server at http://localhost:" + listenPort);
 console.log("proxying requests to " + proxiedDomain + ":" + proxiedPort);
