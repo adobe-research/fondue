@@ -10,10 +10,11 @@
     "url": "https://github.com/adobe-research/fondue.git"
   },
   "dependencies": {
+    "express": "3.3.x",
     "falafel": "0.1.4",
     "falafel-map": "0.3.2",
     "http-proxy": "1.8.x",
-    "express": "3.3.x"
+    "url": "^0.10.3"
   },
   "devDependencies": {
     "tap": "0.4.x"

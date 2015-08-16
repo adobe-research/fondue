@@ -26,28 +26,31 @@
 
 var httpProxy = require("http-proxy");
 var http = require("http");
+var url = require("url");
 var fondueMiddleware = require("../fondueMiddleware");
 
-var listenPort = 9000;
-var proxiedDomain = "http://www.amazon.com";
-//var proxiedDomain = "http://127.0.0.1";
-var proxiedPort = 80;
-//var proxiedPort = 3000;
+var listenPort = 8080;
 
 console.log("starting a server at http://localhost:" + listenPort);
-console.log("proxying requests to " + proxiedDomain + ":" + proxiedPort);
+console.log("proxying requests dynamically");
 
-var proxy = httpProxy.createProxyServer();
 var middleware = fondueMiddleware();
 
+var proxy = httpProxy.createProxyServer({});
 proxy.on("error", function (err, req, res) {
   console.log("proxy error", err);
   res.end();
 });
 
-http.createServer(function (req, res) {
-  console.log(req.method, req.url);
+var server = http.createServer(function (req, res) {
+  var urlObj = url.parse(req.url);
+  var target = urlObj.protocol + "//" + urlObj.host;
+
+  console.log("Proxy Target:", target);
+
   middleware(req, res, function () {
-    proxy.web(req, res, {target: "" + proxiedDomain + ":" + proxiedPort});
+    proxy.web(req, res, {
+      target: target
+    })
   });
 }).listen(listenPort);
