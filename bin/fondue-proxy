@@ -109,26 +109,26 @@ server.addListener('connect', function (req, socket, bodyhead) {
 });
 
 
-//https.createServer({
-//  key: fs.readFileSync('key.pem'),
-//  cert: fs.readFileSync('cert.pem')
-//}, function (req, res) {
-//  var urlObj = url.parse(req.url);
-//  var target = urlObj.protocol + "//" + urlObj.host;
-//
-//  console.log("Proxy Target2:", target);
-//
-//  var proxy = httpProxy.createProxyServer({
-//    agent: new HttpsProxyAgent(target)
-//  });
-//  proxy.on("error", function (err, req, res) {
-//    console.log("proxy error", err);
-//    res.end();
-//  });
-//
-//  middleware(req, res, function () {
-//    proxy.web(req, res, {
-//      target: target
-//    })
-//  });
-//}).listen(8081);
+https.createServer({
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
+}, function (req, res) {
+  var urlObj = url.parse(req.url);
+  var target = urlObj.protocol + "//" + urlObj.host;
+
+  console.log("Target3:", target);
+
+  var proxy = httpProxy.createProxyServer({
+    agent: new HttpsProxyAgent(target)
+  });
+  proxy.on("error", function (err, req, res) {
+    console.log("proxy error", err);
+    res.end();
+  });
+
+  middleware(req, res, function () {
+    proxy.web(req, res, {
+      target: target
+    })
+  });
+}).listen(8081);
