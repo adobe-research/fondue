@@ -33,10 +33,15 @@ var fondueMiddleware = require("../fondueMiddleware");
 var fs = require('fs');
 var net = require('net');
 var middleware = fondueMiddleware();
+var localTarget = "http://localhost:3000";
 
 var server = http.createServer(function (req, res) {
   var urlObj = url.parse(req.url);
   var target = urlObj.protocol + "//" + urlObj.host;
+
+  if (!urlObj.protocol && !urlObj.host){
+    target = localTarget;
+  }
 
   console.log("Proxy Target:", target);
 
@@ -49,7 +54,7 @@ var server = http.createServer(function (req, res) {
   middleware(req, res, function () {
     proxy.web(req, res, {target: target});
   });
-}).listen(8080);
+}).listen(9000);
 
 var regex_hostport = /^([^:]+)(:([0-9]+))?$/;
 
@@ -107,28 +112,28 @@ server.addListener('connect', function (req, socket, bodyhead) {
   });
 
 });
-
-
-https.createServer({
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem')
-}, function (req, res) {
-  var urlObj = url.parse(req.url);
-  var target = urlObj.protocol + "//" + urlObj.host;
-
-  console.log("Target3:", target);
-
-  var proxy = httpProxy.createProxyServer({
-    agent: new HttpsProxyAgent(target)
-  });
-  proxy.on("error", function (err, req, res) {
-    console.log("proxy error", err);
-    res.end();
-  });
-
-  middleware(req, res, function () {
-    proxy.web(req, res, {
-      target: target
-    })
-  });
-}).listen(8081);
+//
+//
+//https.createServer({
+//  key: fs.readFileSync('key.pem'),
+//  cert: fs.readFileSync('cert.pem')
+//}, function (req, res) {
+//  var urlObj = url.parse(req.url);
+//  var target = urlObj.protocol + "//" + urlObj.host;
+//
+//  console.log("Target3:", target);
+//
+//  var proxy = httpProxy.createProxyServer({
+//    agent: new HttpsProxyAgent(target)
+//  });
+//  proxy.on("error", function (err, req, res) {
+//    console.log("proxy error", err);
+//    res.end();
+//  });
+//
+//  middleware(req, res, function () {
+//    proxy.web(req, res, {
+//      target: target
+//    })
+//  });
+//}).listen(8081);

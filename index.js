@@ -191,7 +191,7 @@ function traceFilter(src, options) {
 		// those functions so that we can return it from the wrapper function's
 		// toString.
 
-    //TODO - Callbacks here are not async, therefore are not callbacks!
+    //TODO - Callbacks here are actually handlers, not async
 		falafel(src, { loc: true }, eselector.tester([
 			{
 				selector: '.function',
@@ -406,6 +406,11 @@ function instrument(src, options) {
 	if (src.indexOf("/*theseus" + " instrument: false */") !== -1) {
 		output = shebang + prefix + src;
 	} else {
+
+		try{
+
+		} catch (err){}
+
 		var m = traceFilter(src, {
 			prefix: prefix,
 			path: options.path,
