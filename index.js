@@ -76,6 +76,146 @@ function instrumentationPrefix(options) {
 }
 
 // uses the surrounding code to generate a reasonable name for a function
+function concoctOriginalSource(node) {
+  var sourceObj = {
+    source:"",
+    fromId:""
+  };
+
+  if (node.type === 'FunctionDeclaration') {
+    // function xxx() { }
+    //  -> "xxx"
+    sourceObj = {
+      source: node.parent.source(),
+      fromId: node.parent.id
+    };
+  } else if (node.type === 'FunctionExpression') {
+    if (node.id) {
+      // (function xxx() { })
+      //  -> "xxx"
+      sourceObj = {
+        source: node.parent.source(),
+        fromId: node.parent.id
+      };
+    } else if (node.parent.type === 'VariableDeclarator') {
+      // var xxx = function () { }
+      //  -> "xxx"
+      sourceObj = {
+        source: node.parent.source(),
+        fromId: node.parent.id
+      };
+    } else if (node.parent.type === 'AssignmentExpression') {
+      var left = node.parent.left;
+      if (left.type === 'MemberExpression' && !left.computed) {
+        if (left.object.type === 'MemberExpression' && !left.object.computed) {
+          if (left.object.property.type === 'Identifier' && left.object.property.name === 'prototype') {
+            // yyy.prototype.xxx = function () { }
+            //  -> "yyy.xxx"
+            sourceObj = {
+              source: left.object.object.name + '.prototype.' + left.property.name + " = " + node.source(),
+              fromId: ""
+            };
+
+          }
+        }
+      }
+    } else if (node.parent.type === 'CallExpression') {
+      // look, I know this is a regexp, I'm just sick of parsing ASTs
+      if (/\.on$/.test(node.parent.callee.source())) {
+        var args = node.parent.arguments;
+        if (args[0].type === 'Literal' && typeof args[0].value === 'string') {
+          // .on('event', function () { })
+          //  -> "('event' handler)"
+          //sourceExpression = "('" + args[0].value + "' handler)";
+          sourceObj = {
+            source: node.parent.source(),
+            fromId: node.parent.id
+          };
+        }
+      } else if (node.parent.callee.type === 'Identifier') {
+        if (['setTimeout', 'setInterval'].indexOf(node.parent.callee.name) !== -1) {
+          // setTimeout(function () { }, xxx)
+          // setInterval(function () { }, xxx)
+          //  -> "timer handler"
+          sourceExpression = 'timer handler';
+          if (node.parent.arguments[1] && node.parent.arguments[1].type === 'Literal' && typeof node.parent.arguments[1].value === 'number') {
+            // setTimeout(function () { }, 100)
+            // setInterval(function () { }, 1500)
+            //  -> "timer handler (100ms)"
+            //  -> "timer handler (1.5s)"
+            if (node.parent.arguments[1].value < 1000) {
+              //sourceExpression += ' (' + node.parent.arguments[1].value + 'ms)';
+            } else {
+              //sourceExpression += ' (' + (node.parent.arguments[1].value / 1000) + 's)';
+            }
+          }
+          //sourceExpression = '(' + sourceExpression + ')';
+          sourceObj = {
+            source: node.parent.source(),
+            fromId: node.parent.id
+          };
+        } else {
+          // xxx(function () { })
+          //  -> "('xxx' callback)"
+          //sourceExpression = "('" + node.parent.callee.source() + "' callback)";
+          sourceObj = {
+            source: node.parent.source(),
+            fromId: node.parent.id
+          };
+        }
+      } else if (node.parent.callee.type === 'MemberExpression') {
+        if (node.parent.callee.property.type === 'Identifier') {
+          // xxx.yyy(..., function () { }, ...)
+          //  -> "('yyy' callback)"
+          //sourceExpression = "('" + node.parent.callee.property.name + "' callback)";
+          sourceObj = {
+            source: node.parent.source(),
+            fromId: node.parent.id
+          };
+        }
+      }
+    } else if (node.parent.type === 'Property') {
+      //climb until we get the declaration
+
+      var parent = node.parent;
+      while (parent.type != "AssignmentExpression" && parent.type != "VariableDeclarator" && parent.type != "CallExpression") {
+        parent = parent.parent;
+        if (!parent) {
+          console.warn("Could not find top level parent");
+          break;
+        }
+      }
+
+      if (parent) {
+        sourceObj = {
+          source: parent.source(),
+          fromId: parent.id
+        };
+      }
+    }
+
+    parent = node.parent;
+    while (parent.type != "SwitchStatement" && parent.type != "AssignmentExpression" && parent.type != "VariableDeclarator" && parent.type != "CallExpression") {
+      parent = parent.parent;
+      if (!parent) {
+        break;
+      }
+    }
+
+    if (parent) {
+      sourceObj = {
+        source: parent.source(),
+        fromId: parent.id
+      };
+    } else {
+      console.warn("Missing the source of some statements!")
+    }
+  }
+
+  return sourceObj;
+}
+
+// uses the surrounding code to generate a reasonable name for a function
 function concoctFunctionName(node) {
 	var name = undefined;
 
@@ -202,31 +342,40 @@ function traceFilter(src, options) {
 			}
 		]));
 
+    var addSource = function (node) {
+      var sourceObj = concoctOriginalSource(node);
+      node.originalSource = sourceObj.source;
+      //node.sourceParentId = sourceObj.fromId;
+      node.sourceParentId = "";
 
-    falafel(src, { loc: true }, helpers.wrap(eselector.tester([
+      return node;
+    };
+
+
+		falafel(src, {loc: true}, helpers.wrap(eselector.tester([
 			{
 				selector: 'program',
 				callback: function (node) {
 					var id = makeId('toplevel', options.path, node.loc);
-          node.originalSource = node.source() + " ";
-          preNodes[id] = node;
+          node = addSource(node);
+					preNodes[id] = node;
 				}
 			},
 			{
 				selector: '.function > block',
 				callback: function (node) {
 					var id = makeId('function', options.path, node.parent.loc);
-          node.originalSource = node.source() + " ";
-          preNodes[id] = node;
+          node = addSource(node);
+					preNodes[id] = node;
 				}
 			},
 			{
 				selector: 'expression.function',
 				callback: function (node) {
 					if (node.parent.type !== 'Property' || node.parent.kind === 'init') {
-            var id = makeId('function', options.path, node.loc);
-            node.originalSource = node.source() + " ";
-            preNodes[id] = node;
+						var id = makeId('function', options.path, node.loc);
+            node = addSource(node);
+						preNodes[id] = node;
 					}
 				}
 			},
@@ -234,8 +383,8 @@ function traceFilter(src, options) {
 				selector: '.call',
 				callback: function (node) {
 					var id = makeId('callsite', options.path, node.loc);
-          node.originalSource = node.source() + " ";
-          preNodes[id] = node;
+          node = addSource(node);
+					preNodes[id] = node;
 				}
 			}
 		])));
@@ -252,6 +401,7 @@ function traceFilter(src, options) {
 						end: node.loc.end,
 						id: id,
             originalSource:preNodes[id].originalSource,
+            sourceParentId:preNodes[id].sourceParentId,
 						type: 'toplevel',
 						name: '(' + basename(options.path) + ' toplevel)',
 					});
@@ -271,6 +421,7 @@ function traceFilter(src, options) {
 						end: node.parent.loc.end,
 						id: id,
             originalSource:preNodes[id].originalSource,
+            sourceParentId:preNodes[id].sourceParentId,
 						type: 'function',
 						name: concoctFunctionName(node.parent),
 						params: params,
@@ -301,6 +452,7 @@ function traceFilter(src, options) {
 						end: node.loc.end,
 						id: id,
             originalSource:preNodes[id].originalSource,
+            sourceParentId:preNodes[id].sourceParentId,
 						type: 'callsite',
 						name: node.callee.source(),
 						nameStart: nameLoc.start,
