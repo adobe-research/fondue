@@ -15,6 +15,7 @@
     "falafel-map": "0.3.2",
     "http-proxy": "1.8.x",
     "https-proxy-agent": "^1.0.0",
+    "js-beautify": "^1.5.10",
     "request": "^2.60.0",
     "url": "^0.10.3"
   },

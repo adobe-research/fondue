@@ -28,6 +28,7 @@ var falafelMap = require('falafel-map');
 var eselector = require('../esprima-selector');
 var helpers = require('../falafel-helpers');
 var fs = require('fs');
+var beautify_js = require('js-beautify');
 
 // adds keys from options to defaultOptions, overwriting on conflicts & returning defaultOptions
 function mergeInto(options, defaultOptions) {
@@ -389,6 +390,18 @@ function instrument(src, options) {
 	});
 
 	var prefix = '', shebang = '', output, m;
+
+	src = beautify_js(src, {
+		"indent_size": 2,
+		"wrap_line_length": 120,
+		"preserve_newlines": true,
+		"max_preserve_newlines": 3,
+		"end_with_newline": true
+	});
+
+	if(options.path.indexOf("?theseus=no") > -1){
+		return src;
+	}
 
 	if (m = /^(#![^\n]+)\n/.exec(src)) {
 		shebang = m[1];
