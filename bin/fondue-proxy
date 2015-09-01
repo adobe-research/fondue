@@ -45,7 +45,7 @@ var server = http.createServer(function (req, res) {
     target = localTarget;
   }
 
-  console.log("Proxy Target:", target);
+  console.log("Proxying:", target  + (urlObj.path ? urlObj.path : ""));
 
   var proxy = httpProxy.createProxyServer({});
   proxy.on("error", function (err, req, res) {
