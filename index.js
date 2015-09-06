@@ -391,52 +391,57 @@ function instrument(src, options) {
 	});
 
 	var prefix = '', shebang = '', output, m;
-	src = UglifyJS.minify(src, {
-    fromString: true,
-    warnings: true,
-    mangle: false,
-    compress: {
-      sequences: false,  // join consecutive statemets with the “comma operator”
-      properties: false,  // optimize property access: a["foo"] → a.foo
-      dead_code: false,  // discard unreachable code
-      drop_debugger: false,  // discard “debugger” statements
-      unsafe: false, // some unsafe optimizations (see below)
-      conditionals: false,  // optimize if-s and conditional expressions
-      comparisons: false,  // optimize comparisons
-      evaluate: false,  // evaluate constant expressions
-      booleans: false,  // optimize boolean expressions
-      loops: false,  // optimize loops
-      unused: false,  // drop unused variables/functions
-      hoist_funs: false,  // hoist function declarations
-      hoist_vars: false, // hoist variable declarations
-      if_return: false,  // optimize if-s followed by return/continue
-      join_vars: false,  // join var declarations
-      cascade: false,  // try to cascade `right` into `left` in sequences
-      side_effects: false,  // drop side-effect-free statements
-      warnings: true,  // warn about potentially dangerous optimizations/code
-      global_defs: {}     // global definitions
-    },
-    output: {
-      indent_start: 0,
-      indent_level: 2,
-      quote_keys: false,
-      space_colon: true,
-      ascii_only: false,
-      unescape_regexps: false,
-      inline_script: false,
-      width: 120,
-      max_line_len: 32000,
-      beautify: true,
-      source_map: null,
-      bracketize: false,
-      semicolons: false,
-      comments: true,
-      preserve_line: false,
-      screw_ie8: false,
-      preamble: null,
-      quote_style: 0
-    }
-  }).code;
+
+	try {
+		src = UglifyJS.minify(src, {
+			fromString: true,
+			warnings: true,
+			mangle: false,
+			compress: {
+				sequences: false,  // join consecutive statemets with the “comma operator”
+				properties: false,  // optimize property access: a["foo"] → a.foo
+				dead_code: false,  // discard unreachable code
+				drop_debugger: false,  // discard “debugger” statements
+				unsafe: false, // some unsafe optimizations (see below)
+				conditionals: false,  // optimize if-s and conditional expressions
+				comparisons: false,  // optimize comparisons
+				evaluate: false,  // evaluate constant expressions
+				booleans: false,  // optimize boolean expressions
+				loops: false,  // optimize loops
+				unused: false,  // drop unused variables/functions
+				hoist_funs: false,  // hoist function declarations
+				hoist_vars: false, // hoist variable declarations
+				if_return: false,  // optimize if-s followed by return/continue
+				join_vars: false,  // join var declarations
+				cascade: false,  // try to cascade `right` into `left` in sequences
+				side_effects: false,  // drop side-effect-free statements
+				warnings: true,  // warn about potentially dangerous optimizations/code
+				global_defs: {}     // global definitions
+			},
+			output: {
+				indent_start: 0,
+				indent_level: 2,
+				quote_keys: false,
+				space_colon: true,
+				ascii_only: false,
+				unescape_regexps: false,
+				inline_script: false,
+				width: 120,
+				max_line_len: 32000,
+				beautify: true,
+				source_map: null,
+				bracketize: false,
+				semicolons: false,
+				comments: true,
+				preserve_line: false,
+				screw_ie8: false,
+				preamble: null,
+				quote_style: 0
+			}
+		}).code;
+	} catch (ignored) {
+		console.log(options.path + ": Parse Error, No Trace Installed.")
+	}
 
   if (options.path.indexOf("?theseus=no") > -1) {
     return src;
