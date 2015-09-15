@@ -1,1 +1,0 @@
-mongo admin --eval 'db.shutdownServer()' > /dev/null

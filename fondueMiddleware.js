@@ -30,20 +30,11 @@ var crypto = require("crypto");
 var fondue = require("../fondue");
 var zlib = require("zlib");
 
-var MongoClient = require('mongodb').MongoClient;
-var url = 'mongodb://localhost:27017/local';
-var db;
-var sourceCollection;
+var redis = require('redis');
+var client = redis.createClient();
 
-MongoClient.connect(url, function(err, dbInst) {
-	if (err){
-		console.log("Can't connect to mongo. Try `npm start` or create a data directory.")
-	} else {
-	  console.log("Connected to Mongo Instance");
-		db = dbInst;
-		sourceCollection = db.collection('sources');
-		//sourceCollection.remove({});
-	}
+client.on('connect', function() {
+	console.log('Redis Connected.');
 });
 
 /**
@@ -71,16 +62,17 @@ function instrumentJavaScript(src, fondueOptions, callback, passedSource, i, ite
 	md5.update(JSON.stringify(arguments));
 	var digest = md5.digest("hex");
 
-  sourceCollection.find({digest: digest}).toArray(function (err, docs) {
-    if (docs.length > 0) {
+  client.get(digest, function (err, foundSrc) {
+    if (foundSrc != null) {
       console.log("Found src:", digest);
-      callback(docs[0].src, passedSource, i, iterLoc);
+      callback(foundSrc, passedSource, i, iterLoc);
     } else {
       console.log("Inserting src:", digest);
       var instrumentedSrc = fondue.instrument(src, fondueOptions).toString();
-      sourceCollection.insert([{digest: digest, src: instrumentedSrc}], function (err, result) {
-        callback(instrumentedSrc, passedSource, i, iterLoc);
-      });
+
+			client.set(digest, instrumentedSrc, function (err, reply) {
+				callback(instrumentedSrc, passedSource, i, iterLoc);
+			});
     }
   });
 }
