@@ -67,8 +67,9 @@ function instrumentJavaScript(src, fondueOptions, callback, passedSource, i, ite
       console.log("Found src:", digest);
       callback(foundSrc, passedSource, i, iterLoc);
     } else {
-      console.log("Inserting src:", digest);
+      console.log("Adding New Instrumented Source:", digest);
       var instrumentedSrc = fondue.instrument(src, fondueOptions).toString();
+
 
 			client.set(digest, instrumentedSrc, function (err, reply) {
 				callback(instrumentedSrc, passedSource, i, iterLoc);
