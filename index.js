@@ -28,6 +28,8 @@ var falafelMap = require('falafel-map');
 var eselector = require('../esprima-selector');
 var helpers = require('../falafel-helpers');
 var fs = require('fs');
+var beautify_js = require('js-beautify');
+var UglifyJS = require('uglify-js');
 
 // adds keys from options to defaultOptions, overwriting on conflicts & returning defaultOptions
 function mergeInto(options, defaultOptions) {
@@ -73,146 +75,6 @@ function instrumentationPrefix(options) {
 		nodejs: options.nodejs,
 		maxInvocationsPerTick: options.maxInvocationsPerTick,
 	});
-}
-
-// uses the surrounding code to generate a reasonable name for a function
-function concoctOriginalSource(node) {
-  var sourceObj = {
-    source:"",
-    fromId:""
-  };
-
-  if (node.type === 'FunctionDeclaration') {
-    // function xxx() { }
-    //  -> "xxx"
-    sourceObj = {
-      source: node.parent.source(),
-      fromId: node.parent.id
-    };
-  } else if (node.type === 'FunctionExpression') {
-    if (node.id) {
-      // (function xxx() { })
-      //  -> "xxx"
-      sourceObj = {
-        source: node.parent.source(),
-        fromId: node.parent.id
-      };
-    } else if (node.parent.type === 'VariableDeclarator') {
-      // var xxx = function () { }
-      //  -> "xxx"
-      sourceObj = {
-        source: node.parent.source(),
-        fromId: node.parent.id
-      };
-    } else if (node.parent.type === 'AssignmentExpression') {
-      var left = node.parent.left;
-      if (left.type === 'MemberExpression' && !left.computed) {
-        if (left.object.type === 'MemberExpression' && !left.object.computed) {
-          if (left.object.property.type === 'Identifier' && left.object.property.name === 'prototype') {
-            // yyy.prototype.xxx = function () { }
-            //  -> "yyy.xxx"
-            sourceObj = {
-              source: left.object.object.name + '.prototype.' + left.property.name + " = " + node.source(),
-              fromId: ""
-            };
-
-          }
-        }
-      }
-    } else if (node.parent.type === 'CallExpression') {
-      // look, I know this is a regexp, I'm just sick of parsing ASTs
-      if (/\.on$/.test(node.parent.callee.source())) {
-        var args = node.parent.arguments;
-        if (args[0].type === 'Literal' && typeof args[0].value === 'string') {
-          // .on('event', function () { })
-          //  -> "('event' handler)"
-          //sourceExpression = "('" + args[0].value + "' handler)";
-          sourceObj = {
-            source: node.parent.source(),
-            fromId: node.parent.id
-          };
-        }
-      } else if (node.parent.callee.type === 'Identifier') {
-        if (['setTimeout', 'setInterval'].indexOf(node.parent.callee.name) !== -1) {
-          // setTimeout(function () { }, xxx)
-          // setInterval(function () { }, xxx)
-          //  -> "timer handler"
-          sourceExpression = 'timer handler';
-          if (node.parent.arguments[1] && node.parent.arguments[1].type === 'Literal' && typeof node.parent.arguments[1].value === 'number') {
-            // setTimeout(function () { }, 100)
-            // setInterval(function () { }, 1500)
-            //  -> "timer handler (100ms)"
-            //  -> "timer handler (1.5s)"
-            if (node.parent.arguments[1].value < 1000) {
-              //sourceExpression += ' (' + node.parent.arguments[1].value + 'ms)';
-            } else {
-              //sourceExpression += ' (' + (node.parent.arguments[1].value / 1000) + 's)';
-            }
-          }
-          //sourceExpression = '(' + sourceExpression + ')';
-          sourceObj = {
-            source: node.parent.source(),
-            fromId: node.parent.id
-          };
-        } else {
-          // xxx(function () { })
-          //  -> "('xxx' callback)"
-          //sourceExpression = "('" + node.parent.callee.source() + "' callback)";
-          sourceObj = {
-            source: node.parent.source(),
-            fromId: node.parent.id
-          };
-        }
-      } else if (node.parent.callee.type === 'MemberExpression') {
-        if (node.parent.callee.property.type === 'Identifier') {
-          // xxx.yyy(..., function () { }, ...)
-          //  -> "('yyy' callback)"
-          //sourceExpression = "('" + node.parent.callee.property.name + "' callback)";
-          sourceObj = {
-            source: node.parent.source(),
-            fromId: node.parent.id
-          };
-        }
-      }
-    } else if (node.parent.type === 'Property') {
-      //climb until we get the declaration
-
-      var parent = node.parent;
-      while (parent.type != "AssignmentExpression" && parent.type != "VariableDeclarator" && parent.type != "CallExpression") {
-        parent = parent.parent;
-        if (!parent) {
-          console.warn("Could not find top level parent");
-          break;
-        }
-      }
-
-      if (parent) {
-        sourceObj = {
-          source: parent.source(),
-          fromId: parent.id
-        };
-      }
-    }
-
-    parent = node.parent;
-    while (parent.type != "SwitchStatement" && parent.type != "AssignmentExpression" && parent.type != "VariableDeclarator" && parent.type != "CallExpression") {
-      parent = parent.parent;
-      if (!parent) {
-        break;
-      }
-    }
-
-    if (parent) {
-      sourceObj = {
-        source: parent.source(),
-        fromId: parent.id
-      };
-    } else {
-      console.warn("Missing the source of some statements!")
-    }
-  }
-
-  return sourceObj;
 }
 
 // uses the surrounding code to generate a reasonable name for a function
@@ -342,52 +204,43 @@ function traceFilter(src, options) {
 			}
 		]));
 
-    var addSource = function (node) {
-      var sourceObj = concoctOriginalSource(node);
-      node.originalSource = sourceObj.source;
-      //node.sourceParentId = sourceObj.fromId;
-      node.sourceParentId = "";
-
-      return node;
-    };
-
-
-		falafel(src, {loc: true}, helpers.wrap(eselector.tester([
-			{
-				selector: 'program',
-				callback: function (node) {
-					var id = makeId('toplevel', options.path, node.loc);
-          node = addSource(node);
-					preNodes[id] = node;
-				}
-			},
-			{
-				selector: '.function > block',
-				callback: function (node) {
-					var id = makeId('function', options.path, node.parent.loc);
-          node = addSource(node);
-					preNodes[id] = node;
-				}
-			},
-			{
-				selector: 'expression.function',
-				callback: function (node) {
-					if (node.parent.type !== 'Property' || node.parent.kind === 'init') {
-						var id = makeId('function', options.path, node.loc);
-            node = addSource(node);
-						preNodes[id] = node;
-					}
-				}
-			},
-			{
-				selector: '.call',
-				callback: function (node) {
-					var id = makeId('callsite', options.path, node.loc);
-          node = addSource(node);
-					preNodes[id] = node;
-				}
-			}
-		])));
+    //
+    //falafel(src, { loc: true }, helpers.wrap(eselector.tester([
+		//	{
+		//		selector: 'program',
+		//		callback: function (node) {
+		//			var id = makeId('toplevel', options.path, node.loc);
+     //     node.originalSource = node.source() + " ";
+     //     preNodes[id] = node;
+		//		}
+		//	},
+		//	{
+		//		selector: '.function > block',
+		//		callback: function (node) {
+		//			var id = makeId('function', options.path, node.parent.loc);
+     //     node.originalSource = node.source() + " ";
+     //     preNodes[id] = node;
+		//		}
+		//	},
+		//	{
+		//		selector: 'expression.function',
+		//		callback: function (node) {
+		//			if (node.parent.type !== 'Property' || node.parent.kind === 'init') {
+     //       var id = makeId('function', options.path, node.loc);
+     //       node.originalSource = node.source() + " ";
+     //       preNodes[id] = node;
+		//			}
+		//		}
+		//	},
+		//	{
+		//		selector: '.call',
+		//		callback: function (node) {
+		//			var id = makeId('callsite', options.path, node.loc);
+     //     node.originalSource = node.source() + " ";
+     //     preNodes[id] = node;
+		//		}
+		//	}
+		//])));
 
 		// instrument the source code
 		var instrumentedSrc = falafel(src, { loc: true }, helpers.wrap(eselector.tester([
@@ -400,8 +253,7 @@ function traceFilter(src, options) {
 						start: node.loc.start,
 						end: node.loc.end,
 						id: id,
-            originalSource:preNodes[id].originalSource,
-            sourceParentId:preNodes[id].sourceParentId,
+            //originalSource:preNodes[id].originalSource,
 						type: 'toplevel',
 						name: '(' + basename(options.path) + ' toplevel)',
 					});
@@ -420,8 +272,7 @@ function traceFilter(src, options) {
 						start: node.parent.loc.start,
 						end: node.parent.loc.end,
 						id: id,
-            originalSource:preNodes[id].originalSource,
-            sourceParentId:preNodes[id].sourceParentId,
+            //originalSource:preNodes[id].originalSource,
 						type: 'function',
 						name: concoctFunctionName(node.parent),
 						params: params,
@@ -451,8 +302,7 @@ function traceFilter(src, options) {
 						start: node.loc.start,
 						end: node.loc.end,
 						id: id,
-            originalSource:preNodes[id].originalSource,
-            sourceParentId:preNodes[id].sourceParentId,
+            //originalSource:preNodes[id].originalSource,
 						type: 'callsite',
 						name: node.callee.source(),
 						nameStart: nameLoc.start,
@@ -473,7 +323,7 @@ function traceFilter(src, options) {
 							node.arguments[0].update(JSON.stringify(String(instrumentedEvalSource)))
 						}
 					} else if (node.callee.source() !== "require") {
-						node.callee.originalSource = node.callee.source();
+						//node.callee.originalSource = node.callee.source();
 						if (node.callee.type === 'MemberExpression') {
 							if (node.callee.computed) {
 								node.callee.update(' ', options.tracer_name, '.traceFunCall({ this: ', node.callee.object.source(), ', property: ', node.callee.property.source(), ', nodeId: ', JSON.stringify(id), ' })');
@@ -541,6 +391,61 @@ function instrument(src, options) {
 	});
 
 	var prefix = '', shebang = '', output, m;
+
+	try {
+		src = UglifyJS.minify(src, {
+			fromString: true,
+			warnings: true,
+			mangle: false,
+			compress: {
+				sequences: false,  // join consecutive statemets with the “comma operator”
+				properties: false,  // optimize property access: a["foo"] → a.foo
+				dead_code: false,  // discard unreachable code
+				drop_debugger: false,  // discard “debugger” statements
+				unsafe: false, // some unsafe optimizations (see below)
+				conditionals: false,  // optimize if-s and conditional expressions
+				comparisons: false,  // optimize comparisons
+				evaluate: false,  // evaluate constant expressions
+				booleans: false,  // optimize boolean expressions
+				loops: false,  // optimize loops
+				unused: false,  // drop unused variables/functions
+				hoist_funs: false,  // hoist function declarations
+				hoist_vars: false, // hoist variable declarations
+				if_return: false,  // optimize if-s followed by return/continue
+				join_vars: false,  // join var declarations
+				cascade: false,  // try to cascade `right` into `left` in sequences
+				side_effects: false,  // drop side-effect-free statements
+				warnings: true,  // warn about potentially dangerous optimizations/code
+				global_defs: {}     // global definitions
+			},
+			output: {
+				indent_start: 0,
+				indent_level: 2,
+				quote_keys: false,
+				space_colon: true,
+				ascii_only: false,
+				unescape_regexps: false,
+				inline_script: false,
+				width: 120,
+				max_line_len: 32000,
+				beautify: true,
+				source_map: null,
+				bracketize: false,
+				semicolons: false,
+				comments: true,
+				preserve_line: false,
+				screw_ie8: false,
+				preamble: null,
+				quote_style: 0
+			}
+		}).code;
+	} catch (ignored) {
+		console.log(options.path + ": Parse Error, No Trace Installed.")
+	}
+
+  if (options.path.indexOf("?theseus=no") > -1) {
+    return src;
+	}
 
 	if (m = /^(#![^\n]+)\n/.exec(src)) {
 		shebang = m[1];

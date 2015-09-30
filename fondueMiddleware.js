@@ -30,8 +30,12 @@ var crypto = require("crypto");
 var fondue = require("../fondue");
 var zlib = require("zlib");
 
-// instrumented javascript cache
-var cache = {}; // MD5 digest -> string
+var redis = require('redis');
+var client = redis.createClient();
+
+client.on('connect', function() {
+	console.log('Redis Connected.');
+});
 
 /**
  Usage:
@@ -53,21 +57,30 @@ function mergeInto(options, defaultOptions) {
 /**
  Returns instrumented JavaScript. From the cache, if it's there.
  */
-function instrumentJavaScript(src, fondueOptions) {
+function instrumentJavaScript(src, fondueOptions, callback, passedSource, i, iterLoc) {
 	var md5 = crypto.createHash("md5");
 	md5.update(JSON.stringify(arguments));
 	var digest = md5.digest("hex");
-	if (digest in cache) {
-	    return cache[digest];
-	} else {
-	    return cache[digest] = fondue.instrument(src, fondueOptions).toString();
-	}
+
+  client.get(digest, function (err, foundSrc) {
+    if (foundSrc != null) {
+      console.log("Found src:", digest);
+      callback(foundSrc, passedSource, i, iterLoc);
+    } else {
+      console.log("Inserting src:", digest);
+      var instrumentedSrc = fondue.instrument(src, fondueOptions).toString();
+
+			client.set(digest, instrumentedSrc, function (err, reply) {
+				callback(instrumentedSrc, passedSource, i, iterLoc);
+			});
+    }
+  });
 }
 
 /**
  Returns the given HTML after instrumenting all JavaScript found in <script> tags.
  */
-function instrumentHTML(src, fondueOptions) {
+function instrumentHTML(src, fondueOptions, callback) {
 	var scriptLocs = [];
 	var scriptBeginRegexp = /<\s*script[^>]*>/ig;
 	var scriptEndRegexp = /<\s*\/\s*script/i;
@@ -87,6 +100,32 @@ function instrumentHTML(src, fondueOptions) {
 		}
 	}
 
+  var hits = 0;
+  var retSrc = [];
+  var instCallback = function(instSrc, passedSrc, preI, iterLoc){
+    hits++;
+    retSrc[preI] = instSrc;
+
+    if (hits === scriptLocs.length) {
+      for (var i = scriptLocs.length - 1; i >= 0; i--) {
+        passedSrc = passedSrc.slice(0, scriptLocs[i].start) + retSrc[i] + passedSrc.slice(scriptLocs[i].end);
+      }
+
+      // remove the doctype if there was one (it gets put back below)
+      var doctype = "";
+      var doctypeMatch = /^(<!doctype[^\n]+\n)/i.exec(passedSrc);
+      if (doctypeMatch) {
+        doctype = doctypeMatch[1];
+        passedSrc = passedSrc.slice(doctypeMatch[1].length);
+      }
+
+      // assemble!
+      passedSrc = doctype + "<script>\n" + fondue.instrumentationPrefix(fondueOptions) + "\n</script>\n" + passedSrc;
+
+      callback(passedSrc);
+    }
+  };
+
 	// process the scripts in reverse order
 	for (var i = scriptLocs.length - 1; i >= 0; i--) {
 		var loc = scriptLocs[i];
@@ -94,21 +133,8 @@ function instrumentHTML(src, fondueOptions) {
 		var options = mergeInto(fondueOptions, {});
 		options.path = options.path + "-script-" + i;
 		var prefix = src.slice(0, loc.start).replace(/[^\n]/g, " "); // padding it out so line numbers make sense
-		src = src.slice(0, loc.start) + instrumentJavaScript(prefix + script, options) + src.slice(loc.end);
+		instrumentJavaScript(prefix + script, options, instCallback, src.valueOf(), i, loc);
 	}
-
-	// remove the doctype if there was one (it gets put back below)
-	var doctype = "";
-	var doctypeMatch = /^(<!doctype[^\n]+\n)/i.exec(src);
-	if (doctypeMatch) {
-		doctype = doctypeMatch[1];
-		src = src.slice(doctypeMatch[1].length);
-	}
-
-	// assemble!
-	src = doctype + "<script>\n" + fondue.instrumentationPrefix(fondueOptions) + "\n</script>\n" + src;
-
-	return src;
 }
 
 /**
@@ -166,22 +192,26 @@ module.exports = function (options) {
 				var type = res.getHeader("Content-Type");
 				var fondueOptions = mergeInto(options, { path: unescape(req.url), include_prefix: false });
 				var src;
+        var endCall = function (instSrc) {
+					if(instSrc){
+	          written = [instSrc];
+					}
+          written.forEach(function (c) {
+            write.call(res, c);
+          });
+
+          return end.call(res);
+        };
 
 				if (/(application|text)\/javascript/.test(type)) {
 					src = buffer.toString();
-					src = instrumentJavaScript(src, fondueOptions);
-					written = [src];
-				} else if (/text\/html/.test(type)) {
+          instrumentJavaScript(src, fondueOptions, endCall);
+        } else if (/text\/html/.test(type)) {
 					src = buffer.toString();
-					src = instrumentHTML(src, fondueOptions);
-					written = [src];
+          instrumentHTML(src, fondueOptions, endCall);
+				} else {
+					endCall();
 				}
-
-				written.forEach(function (c) {
-					write.call(res, c);
-				});
-
-				return end.call(res);
 			}
 		};
 

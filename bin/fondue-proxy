@@ -36,6 +36,8 @@ var middleware = fondueMiddleware();
 var localTarget = "http://localhost:3000";
 
 var server = http.createServer(function (req, res) {
+  res.setHeader('Access-Control-Allow-Origin', 'chrome-extension://mnpkfjilckjdlfgggeohheepnlhfnjao');
+
   var urlObj = url.parse(req.url);
   var target = urlObj.protocol + "//" + urlObj.host;
 
@@ -43,7 +45,7 @@ var server = http.createServer(function (req, res) {
     target = localTarget;
   }
 
-  console.log("Proxy Target:", target);
+  console.log("Proxying:", target  + (urlObj.path ? urlObj.path : ""));
 
   var proxy = httpProxy.createProxyServer({});
   proxy.on("error", function (err, req, res) {
