@@ -38,6 +38,7 @@ var cheerio = require('cheerio');
 var _ = require('underscore');
 var moment = require('moment');
 var htmlMinify = require('html-minifier').minify;
+var URI = require('URIjs');
 
 redisClient.on('connect', function () {
   console.log('Redis Connected.');
@@ -153,12 +154,24 @@ var request = require("request");
 module.exports = function (req, res, next) {
 
   var resourceURL;
+  var basePath;
   var isHTML = false;
 
-  if (req.url.indexOf("&html=true") > -1) {
+  var params = {};
+  try {
+    var paramArr = req.url.split("?")[1].split("&");
+    _(paramArr).each(function (set) {
+      var key = set.split("=")[0];
+      var value = set.split("=")[1];
+      params[key] = value;
+    });
+  } catch (ignored) {
+  }
+
+  if (params.html && params.html === "true") {
     isHTML = true;
-    resourceURL = req.url.split("&html=true")[0];
-    resourceURL = decodeURIComponent(resourceURL.split("?url=")[1])
+    resourceURL = decodeURIComponent(params.url);
+    basePath = decodeURIComponent(params.basePath);
   } else if (req.query.url.indexOf("?url=") > -1) {
     try {
       resourceURL = decodeURIComponent(req.query.url.split("?url=")[1]);
@@ -176,28 +189,13 @@ module.exports = function (req, res, next) {
   var opts = {
     url: resourceURL,
     fileName: fileName,
-    method: "GET",
-    headers: {
-      //"host": "localhost:9000",
-      //"connection": "keep-alive",
-      //"fondue": "https://code.jquery.com/jquery-2.1.4.min.js",
-      //"cache-control": "no-cache",
-      //"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.99 Safari/537.36",
-      //"content-type": "application/javascript",
-      //"accept": "*/*",
-      //"dnt": "1",
-      //"accept-encoding": "gzip, deflate, sdch",
-      //"accept-language": "en-US,en;q=0.8",
-      //"cookie": "__ssid=960a52f9-f185-4df6-9a77-744978a23bdd; _cb_ls=1; _chartbeat2=CXLD_-fH9zC5-IYW.1441494174656.1441494182897.1; mp_75b1d24a516ecfc955eadfadc4910661_mixpanel=%7B%22distinct_id%22%3A%20%2214f9fbf8c19736-09250e619-10386952-1aeaa0-14f9fbf8c1a13bc%22%2C%22%24initial_referrer%22%3A%20%22%24direct%22%2C%22%24initial_referring_domain%22%3A%20%22%24direct%22%7D; ywandp=10001561398679%3A1732691266; rtna=1; ctoLocalVisitor={%22localVisitorId%22:%221442263082662-3120987901929%22}; ctoVisitor={%22firstPageName%22:%22dcom|dhome|homepage|homepage%22%2C%22firstRefUrl%22:%22%22%2C%22firstUrl%22:%22http://localhost:63342/node-offliner/sites/disney.com-2015-09-14-3-37-27/index.html%22%2C%22sessionCount%22:38}; rx=6234623244963586.1442352229465; liqpw=1280; liqph=1011; csm-hit=s-0M3C0PJKG9FMMMZVT2KQ|1442615020345; jsbin=s%3Aj%3A%7B%22version%22%3A%223.34.3%22%2C%22_csrf%22%3A%22j%2Fipt%2FoDv31i%2FW6f87sKKCx8%22%2C%22flashCache%22%3A%7B%7D%7D.7r6bhBdsnCtnTmqgBUKNQjTWU1jvSWOgXuzamTcwPcw"
-    }
+    method: "GET"
   };
 
   if (isHTML) {
     delete opts.fileName;
   }
 
-  //var type = req.headers["content-type"];
-  //if (/(application|text)\/javascript/.test(type) || /text\/html/.test(type)) {
   console.log("Requesting:", opts.url);
 
   request(opts, function (err, subRes, body) {
@@ -208,12 +206,11 @@ module.exports = function (req, res, next) {
     res.setHeader("origin", req.headers.origin);
     res.setHeader("Cache-Control", "no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0");
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
-    //res.setHeader('Access-Control-Allow-Origin', 'chrome-extension://mnpkfjilckjdlfgggeohheepnlhfnjao');
-    //res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
 
     var fondueOptions = {
-      path: unescape(resourceURL),
-      include_prefix: false
+      path: resourceURL,
+      include_prefix: false,
+      noTheseus: params.theseus === "no"
     };
 
     var endCall = function (src, alterScript) {
@@ -234,6 +231,7 @@ module.exports = function (req, res, next) {
       instrumentJavaScript(body, fondueOptions, endCall);
     } else if (isHTML) {
 
+      //Remove crap that breaks fondue
       body = htmlMinify(body, {
         removeComments: true,
         minifyJS: {
@@ -264,7 +262,6 @@ module.exports = function (req, res, next) {
         }
       });
 
-
       var $ = cheerio.load(body);
       var domItems = $("*");
       _(domItems).each(function (domItem) {
@@ -275,6 +272,10 @@ module.exports = function (req, res, next) {
           var elSrcLink = $domItem.attr("src");
           if (elSrcLink) {
             if ($domItem.is("script")) {
+              if (elSrcLink && elSrcLink.indexOf("http") < 0) {
+                elSrcLink = URI(elSrcLink).absoluteTo(basePath).toString();
+              }
+
               $domItem.attr("src", "https://localhost:9001?url=" + encodeURIComponent(elSrcLink));
             }
           }
@@ -286,15 +287,4 @@ module.exports = function (req, res, next) {
       instrumentHTML(parsed, fondueOptions, endCall);
     }
   });
-  //} else {
-  //  var newReq = request(resourceURL, function (error) {
-  //    if (error) {
-  //      throw error;
-  //    }
-  //  });
-  //
-  //  req.pipe(newReq).on('response', function (res) {
-  //    //alter response before piping
-  //  }).pipe(res);
-  //}
 };

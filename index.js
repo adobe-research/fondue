@@ -443,7 +443,7 @@ function instrument(src, options) {
 		console.log(options.path + ": Parse Error, No Trace Installed.")
 	}
 
-  if (options.path.indexOf("?theseus=no") > -1) {
+  if (options.noTheseus || options.path.indexOf("theseus=no") > -1) {
     return src;
 	}
 

@@ -8,7 +8,7 @@ var app = express();
 var fs = require('fs');
 
 app.use(bodyParser.json());
-app.all("*", require("../fondueMiddlewareServer"));
+app.all("*", require("../fondueMiddlewareAPI"));
 //app.all("*", function(req, res){
 //  res.send("hello world")
 //});
