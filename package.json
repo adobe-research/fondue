@@ -21,7 +21,6 @@
     "https-proxy-agent": "^1.0.0",
     "js-beautify": "^1.5.10",
     "moment": "^2.10.6",
-    "mongodb": "^2.0.43",
     "redis": "^1.0.0",
     "request": "^2.60.0",
     "uglify-js": "^2.4.24",
