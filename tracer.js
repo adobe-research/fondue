@@ -111,8 +111,14 @@ if (typeof {name} === 'undefined') {
 	var _invocationStackSize = 0;
 	var _explainedBails = false;
 
+	function _consoleLog() {
+		if (typeof console !== 'undefined') {
+			console.log.apply(console, arguments);
+		}
+	}
+
 	function _resetTrace() {
-		console.log("[fondue] resetting trace data...");
+		_consoleLog("[fondue] resetting trace data...");
 
 		invocationStack = [];
 		invocationById = {}; // id(string) -> invocation
@@ -495,7 +501,7 @@ if (typeof {name} === 'undefined') {
 				}
 				return [size, o2];
 			} catch (e) {
-				console.log("[fondue] couldn't scrape", o, e);
+				_consoleLog("[fondue] couldn't scrape", o, e);
 				return [1, o];
 			}
 		};
@@ -593,7 +599,7 @@ if (typeof {name} === 'undefined') {
 				if (callSite) {
 					addLogEntry(handle, callSite.id);
 				} else {
-					console.log("no call site! I needed one!", invocation.getParents());
+					_consoleLog("no call site! I needed one!", invocation.getParents());
 				}
 			}
 			if (query.ids && query.ids.indexOf(id) !== -1) {
@@ -702,12 +708,12 @@ if (typeof {name} === 'undefined') {
 		lastExceptionThrownFromInvocation = undefined;
 
 		if (fromNode) {
-			console.log("[fondue] bailing from " + (fromNode.name ? (fromNode.name + " at ") : "") + fromNode.path + " line " + fromNode.start.line + ", character " + fromNode.start.column);
+			_consoleLog("[fondue] bailing from " + (fromNode.name ? (fromNode.name + " at ") : "") + fromNode.path + " line " + fromNode.start.line + ", character " + fromNode.start.column);
 		} else {
-			console.log("[fondue] bailing! trace collection will resume next tick");
+			_consoleLog("[fondue] bailing! trace collection will resume next tick");
 		}
 		if (!_explainedBails) {
-			console.log("[fondue] (fondue is set to automatically bail after {maxInvocationsPerTick} invocations within a single tick. If you are using node-theseus, you can use the --theseus-max-invocations-per-tick=XXX option to raise the limit, but it will require more memory)");
+			_consoleLog("[fondue] (fondue is set to automatically bail after {maxInvocationsPerTick} invocations within a single tick. If you are using node-theseus, you can use the --theseus-max-invocations-per-tick=XXX option to raise the limit, but it will require more memory)");
 			_explainedBails = true;
 		}
 	}
@@ -716,7 +722,7 @@ if (typeof {name} === 'undefined') {
 		_bailedTick = false;
 		_invocationsThisTick = 0;
 
-		console.log('[fondue] resuming trace collection after bailed tick');
+		_consoleLog('[fondue] resuming trace collection after bailed tick');
 	}
 
 	function pushNewInvocation(info, type) {
@@ -981,7 +987,7 @@ if (typeof {name} === 'undefined') {
 		};
 
 		return function () {
-			console.log.apply(console, arguments);
+			_consoleLog.apply(console, arguments);
 
 			var callerInvocation = invocationStack[invocationStack.length - 1];
 
@@ -1027,9 +1033,11 @@ if (typeof {name} === 'undefined') {
 			return func;
 		}
 
-		var logFunctions = [console.log, console.info, console.warn, console.error, console.trace];
-		if (typeof console !== 'undefined' && logFunctions.indexOf(func) !== -1) {
-			return _traceLogCall(info);
+		if (typeof console !== 'undefined') {
+			var logFunctions = [console.log, console.info, console.warn, console.error, console.trace];
+			if (logFunctions.indexOf(func) !== -1) {
+				return _traceLogCall(info);
+			}
 		}
 
 		return function () {
@@ -1181,24 +1189,26 @@ if (typeof {name} === 'undefined') {
 	}
 
 	if ({nodejs}) {
-		// override EventEmitter.emit() to automatically begin epochs when events are thrown
-		var EventEmitter = require('events').EventEmitter;
-		var oldEmit = EventEmitter.prototype.emit;
-		EventEmitter.prototype.emit = function (ev) {
-			// give this emitter an identifier if it doesn't already have one
-			if (!this._emitterID) {
-				this._emitterID = ++_lastEmitterID;
-			}
+		if (typeof require !== 'undefined') {
+			// override EventEmitter.emit() to automatically begin epochs when events are thrown
+			var EventEmitter = require('events').EventEmitter;
+			var oldEmit = EventEmitter.prototype.emit;
+			EventEmitter.prototype.emit = function (ev) {
+				// give this emitter an identifier if it doesn't already have one
+				if (!this._emitterID) {
+					this._emitterID = ++_lastEmitterID;
+				}
 
-			// start an epoch & emit the event
-			var epoch = nextEpoch(this._emitterID, ev);
-			{name}.pushEpoch(epoch);
-			try {
-				return oldEmit.apply(this, arguments);
-			} finally {
-				{name}.popEpoch();
-			}
-		};
+				// start an epoch & emit the event
+				var epoch = nextEpoch(this._emitterID, ev);
+				{name}.pushEpoch(epoch);
+				try {
+					return oldEmit.apply(this, arguments);
+				} finally {
+					{name}.popEpoch();
+				}
+			};
+		}
 	}
 
 	this.augmentjQuery = function ($) {
@@ -1249,7 +1259,7 @@ if (typeof {name} === 'undefined') {
 
 	// deprecated
 	this.connect = function () {
-		if (typeof console !== 'undefined') console.log("Opening the Developer Console will break the connection with Brackets!");
+		if (typeof console !== 'undefined') _consoleLog("Opening the Developer Console will break the connection with Brackets!");
 		_connected = true;
 		_sendNodes(nodes);
 		return this;
