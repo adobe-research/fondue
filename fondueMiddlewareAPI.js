@@ -152,39 +152,56 @@ function instrumentHTML(src, fondueOptions, callback) {
  */
 var request = require("request");
 module.exports = function (req, res, next) {
-
   var resourceURL;
   var basePath;
+  var fileName;
+  var params = {};
   var isHTML = false;
 
-  var params = {};
-  try {
-    var paramArr = req.url.split("?")[1].split("&");
-    _(paramArr).each(function (set) {
-      var key = set.split("=")[0];
-      var value = set.split("=")[1];
-      params[key] = value;
-    });
-  } catch (ignored) {
-  }
-
-  if (params.html && params.html === "true") {
-    isHTML = true;
-    resourceURL = decodeURIComponent(params.url);
-    basePath = decodeURIComponent(params.basePath);
-  } else if (req.query.url.indexOf("?url=") > -1) {
-    try {
-      resourceURL = decodeURIComponent(req.query.url.split("?url=")[1]);
-    } catch (err) {
-      res.send("");
+  if (req.url.indexOf("/htmlUrl") === 0) {
+    if (!req.body.originalHTML) {
+      res.send(200);
       return;
+    } else {
+      var arr = req.url.split("/");
+      resourceURL = decodeURIComponent(arr[2]);
+      basePath = decodeURIComponent(arr[4]);
+      params.beautifyOnly = "true";
+      params.html = "true";
+      isHTML = true;
     }
-  } else if (req.query.url.indexOf("http") > -1) {
-    resourceURL = req.query.url;
   }
 
-  var arr = resourceURL.split("/");
-  var fileName = arr[arr.length - 1];
+  if (!resourceURL) {
+
+    try {
+      var paramArr = req.url.split("?")[1].split("&");
+      _(paramArr).each(function (set) {
+        var key = set.split("=")[0];
+        var value = set.split("=")[1];
+        params[key] = value;
+      });
+    } catch (ignored) {
+    }
+
+    if (params.html && params.html === "true") {
+      isHTML = true;
+      resourceURL = decodeURIComponent(params.url);
+      basePath = decodeURIComponent(params.basePath);
+    } else if (req.query && req.query.url.indexOf("?url=") > -1) {
+      try {
+        resourceURL = decodeURIComponent(req.query.url.split("?url=")[1]);
+      } catch (err) {
+        res.send("");
+        return;
+      }
+    } else if (req.query && req.query.url.indexOf("http") > -1) {
+      resourceURL = req.query.url;
+    }
+
+    var arr = resourceURL.split("/");
+    fileName = arr[arr.length - 1];
+  }
 
   var opts = {
     url: resourceURL,
@@ -196,16 +213,10 @@ module.exports = function (req, res, next) {
     delete opts.fileName;
   }
 
-  console.log("Requesting:", opts.url);
-
-  request(opts, function (err, subRes, body) {
+  var reqCallback = function (err, subRes, body) {
     if (err) {
       throw err;
     }
-
-    res.setHeader("origin", req.headers.origin);
-    res.setHeader("Cache-Control", "no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0");
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
 
     var fondueOptions = {
       path: resourceURL,
@@ -230,6 +241,11 @@ module.exports = function (req, res, next) {
     if (!isHTML) {
       instrumentJavaScript(body, fondueOptions, endCall);
     } else if (isHTML) {
+      var extraParam = "";
+      if (params.beautifyOnly && params.beautifyOnly === "true") {
+        extraParam = "&theseus=no";
+        fondueOptions.noTheseus = true;
+      }
 
       //Remove crap that breaks fondue
       body = htmlMinify(body, {
@@ -267,16 +283,15 @@ module.exports = function (req, res, next) {
       _(domItems).each(function (domItem) {
         var $domItem = $(domItem);
 
-
         if ($domItem.is("script")) {
           var elSrcLink = $domItem.attr("src");
-          if (elSrcLink) {
+          if (elSrcLink && elSrcLink.indexOf("chrome-extension") < 0) {
             if ($domItem.is("script")) {
               if (elSrcLink && elSrcLink.indexOf("http") < 0) {
                 elSrcLink = URI(elSrcLink).absoluteTo(basePath).toString();
               }
 
-              $domItem.attr("src", "https://localhost:9001?url=" + encodeURIComponent(elSrcLink));
+              $domItem.attr("src", "https://localhost:9001?url=" + encodeURIComponent(elSrcLink) + extraParam);
             }
           }
         }
@@ -284,7 +299,14 @@ module.exports = function (req, res, next) {
       });
 
       var parsed = $.html();
+
       instrumentHTML(parsed, fondueOptions, endCall);
     }
-  });
+  };
+
+  if (req.body && req.body.originalHTML) {
+    reqCallback(null, null, req.body.originalHTML);
+  } else {
+    request(opts, reqCallback);
+  }
 };
