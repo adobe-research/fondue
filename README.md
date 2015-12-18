@@ -14,6 +14,11 @@ Install
 
     npm install fondue
 
+Documentation
+-------------
+
+[http://adobe-research.github.io/fondue/](http://adobe-research.github.io/fondue/)
+
 Use
 ---
 
