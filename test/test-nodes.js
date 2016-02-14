@@ -53,7 +53,7 @@ test('nodes', function (t) {
 	// top-level
 
 	t.similar(nodeWithTypeName('toplevel', '(nodes.js toplevel)'), {
-		id: 'scripts/nodes.js-toplevel-1-0-9-21',
+		id: 'scripts/nodes.js-toplevel-1-0-10-0',
 		type: 'toplevel',
 	});
 
