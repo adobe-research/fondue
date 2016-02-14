@@ -189,7 +189,7 @@ function traceFilter(src, options) {
 		// anonymous functions, we need to capture the original source code for
 		// those functions so that we can return it from the wrapper function's
 		// toString.
-		falafel(src, { loc: true }, eselector.tester([
+		falafel(src, { locations: true }, eselector.tester([
 			{
 				selector: '.function',
 				callback: function (node) {
@@ -200,7 +200,7 @@ function traceFilter(src, options) {
 		]));
 
 		// instrument the source code
-		var instrumentedSrc = falafel(src, { loc: true }, helpers.wrap(eselector.tester([
+		var instrumentedSrc = falafel(src, { locations: true }, helpers.wrap(eselector.tester([
 			{
 				selector: 'program',
 				callback: function (node) {
