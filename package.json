@@ -1,13 +1,13 @@
 {
-	"name" : "fondue",
-	"description" : "rewrites JavaScript code to collect partial execution traces",
+	"name" : "fondue-es6",
+	"description" : "rewrites JavaScript code to collect partial execution traces, forked for es6 compatibility",
 	"license" : "MIT",
 	"author" : "Tom Lieber <tom@alltom.com>",
 	"version" : "0.6.1",
 	"main" : "./index",
 	"repository" : {
 		"type" : "git",
-		"url" : "https://github.com/adobe-research/fondue.git"
+		"url" : "https://github.com/polo2ro/fondue.git"
 	},
 	"dependencies" : {
 		"falafel" : "1.2.0",
