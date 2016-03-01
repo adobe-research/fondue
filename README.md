@@ -5,14 +5,17 @@ Collect real-time JavaScript traces (number of times a function has been called,
 
 Easily instrument an entire program with [node-theseus](https://github.com/adobe-research/node-theseus).
 
+This repository is a fork of [fondue](https://travis-ci.org/adobe-research/fondue) from Adobe Research to add support for ES6. 
+It has been registered as fondue-es6 on npmjs.org and is used in [this fork of node-theseus](https://github.com/polo2ro/node-theseus)
+
 Plain objects are returned from all API calls so that they can be passed around as JSON. [node-theseus](https://github.com/adobe-research/node-theseus) does this with a WebSocket. [Theseus](https://github.com/adobe-research/theseus) does it over Chrome's Remote Debugging API (which boils down to a WebSocket).
 
-[![Build Status](https://travis-ci.org/adobe-research/fondue.png)](https://travis-ci.org/adobe-research/fondue)
+[![Build Status](https://travis-ci.org/polo2ro/fondue.png)](https://travis-ci.org/polo2ro/fondue)
 
 Install
 -------
 
-    npm install fondue
+    npm install fondue-es6
 
 Documentation
 -------------
