@@ -16,6 +16,7 @@ Install
 -------
 
     npm install fondue-es6
+    
 
 Documentation
 -------------
