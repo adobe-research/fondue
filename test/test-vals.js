@@ -38,7 +38,27 @@ test('vals', function (t) {
 	});
 
 	var handle = tracer.trackProbeValues({ nodeIds: probeNodeIds });
-	t.equal(Object.keys(tracer.probeValuesDelta(handle)).length, probeNodeIds.length - 3);
+	var delta = tracer.probeValuesDelta(handle);
+	var keys = Object.keys(delta);
+
+	t.equal(keys.length, probeNodeIds.length - 3, "Probe values should exist for all but the 3 deferred probe nodes");
+	
+	var probedNumbers = keys.filter(function (key) {
+		return delta[key].val.type === 'number';
+	}).map(function (key) {
+		return delta[key].val.value;
+	});
+
+	function probeShouldReport(val) {
+		t.ok(probedNumbers.indexOf(val) >= 0, "A probe should report the value " + val);
+	}
+
+	probeShouldReport(1);
+	probeShouldReport(2);
+	probeShouldReport(3);
+	probeShouldReport(4);
+	probeShouldReport(5);
+	probeShouldReport(6);
 
 	setTimeout(function () {
 		t.equal(Object.keys(tracer.probeValuesDelta(handle)).length, 3);
