@@ -30,8 +30,8 @@ window.fondue = require("./");
 var basename = require('path').basename;
 var falafel = require('falafel');
 var falafelMap = require('falafel-map');
-var eselector = require('esprima-selector');
-var helpers = require('falafel-helpers');
+var eselector = require('../../esprima-selector');
+var helpers = require('../../falafel-helpers');
 var fs = require('fs');
 
 // adds keys from options to defaultOptions, overwriting on conflicts & returning defaultOptions
@@ -599,7 +599,7 @@ module.exports.tester = tester;
 module.exports.nodeTag = nodeTag;
 
 },{}],4:[function(require,module,exports){
-var eselector = require('esprima-selector');
+var eselector = require('../../esprima-selector');
 
 // decorates the given esprima node with tag-specific helpers.
 // statements and the like get:

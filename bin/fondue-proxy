@@ -1,0 +1,141 @@
+#!/usr/bin/env node
+
+/*
+ * Copyright (c) 2013 Massachusetts Institute of Technology, Adobe Systems
+ * Incorporated, and other contributors. All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ */
+
+var httpProxy = require("http-proxy");
+var HttpsProxyAgent = require('https-proxy-agent');
+var http = require("http");
+var https = require("https");
+var url = require("url");
+var fondueMiddleware = require("../fondueMiddleware");
+var fs = require('fs');
+var net = require('net');
+var middleware = fondueMiddleware();
+var localTarget = "http://localhost:3000";
+
+var server = http.createServer(function (req, res) {
+  res.setHeader('Access-Control-Allow-Origin', 'chrome-extension://mnpkfjilckjdlfgggeohheepnlhfnjao');
+
+  var urlObj = url.parse(req.url);
+  var target = urlObj.protocol + "//" + urlObj.host;
+
+  if (!urlObj.protocol && !urlObj.host){
+    target = localTarget;
+  }
+
+  console.log("Proxying:", target  + (urlObj.path ? urlObj.path : ""));
+
+  var proxy = httpProxy.createProxyServer({});
+  proxy.on("error", function (err, req, res) {
+    console.log("proxy error", err);
+    res.end();
+  });
+
+  middleware(req, res, function () {
+    proxy.web(req, res, {target: target});
+  });
+}).listen(9000);
+
+var regex_hostport = /^([^:]+)(:([0-9]+))?$/;
+
+var getHostPortFromString = function (hostString, defaultPort) {
+  var host = hostString;
+  var port = defaultPort;
+
+  var result = regex_hostport.exec(hostString);
+  if (result != null) {
+    host = result[1];
+    if (result[2] != null) {
+      port = result[3];
+    }
+  }
+
+  return ( [host, port] );
+};
+
+server.addListener('connect', function (req, socket, bodyhead) {
+  var hostPort = getHostPortFromString(req.url, 443);
+  var hostDomain = hostPort[0];
+  var port = parseInt(hostPort[1]);
+  console.log("Target2:", hostDomain, port);
+
+  var proxySocket = new net.Socket();
+  proxySocket.connect(port, hostDomain, function () {
+      proxySocket.write(bodyhead);
+      socket.write("HTTP/" + req.httpVersion + " 200 Connection established\r\n\r\n");
+    }
+  );
+
+  proxySocket.on('data', function (chunk) {
+    socket.write(chunk);
+  });
+
+  proxySocket.on('end', function () {
+    socket.end();
+  });
+
+  proxySocket.on('error', function () {
+    socket.write("HTTP/" + req.httpVersion + " 500 Connection error\r\n\r\n");
+    socket.end();
+  });
+
+  socket.on('data', function (chunk) {
+    proxySocket.write(chunk);
+  });
+
+  socket.on('end', function () {
+    proxySocket.end();
+  });
+
+  socket.on('error', function () {
+    proxySocket.end();
+  });
+
+});
+//
+//
+//https.createServer({
+//  key: fs.readFileSync('key.pem'),
+//  cert: fs.readFileSync('cert.pem')
+//}, function (req, res) {
+//  var urlObj = url.parse(req.url);
+//  var target = urlObj.protocol + "//" + urlObj.host;
+//
+//  console.log("Target3:", target);
+//
+//  var proxy = httpProxy.createProxyServer({
+//    agent: new HttpsProxyAgent(target)
+//  });
+//  proxy.on("error", function (err, req, res) {
+//    console.log("proxy error", err);
+//    res.end();
+//  });
+//
+//  middleware(req, res, function () {
+//    proxy.web(req, res, {
+//      target: target
+//    })
+//  });
+//}).listen(8081);

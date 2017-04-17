@@ -1,33 +1,45 @@
 {
-	"name" : "fondue",
-	"description" : "rewrites JavaScript code to collect partial execution traces",
-	"license" : "MIT",
-	"author" : "Tom Lieber <tom@alltom.com>",
-	"version" : "0.6.1",
-	"main" : "./index",
-	"repository" : {
-		"type" : "git",
-		"url" : "https://github.com/adobe-research/fondue.git"
-	},
-	"dependencies" : {
-		"falafel" : "0.1.4",
-		"falafel-map" : "0.3.2",
-		"esprima-selector" : "~0.0.3",
-		"falafel-helpers" : "~0.0.3"
-	},
-	"devDependencies" : {
-		"tap" : "0.4.x"
-	},
-	"keywords" : [
-		"source",
-		"trace",
-		"instrumentation"
-	],
-	"scripts" : {
-		"test" : "tap test/test-*.js",
-		"build-browser" : "node build-browser.js"
-	},
-	"bin" : {
-		"node-theseus" : "./bin/fondue"
-	}
+  "name": "fondue",
+  "description": "rewrites JavaScript code to collect partial execution traces",
+  "license": "MIT",
+  "author": "Tom Lieber <tom@alltom.com>",
+  "version": "0.6.1",
+  "main": "./index",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe-research/fondue.git"
+  },
+  "dependencies": {
+    "URIjs": "^1.16.1",
+    "body-parser": "^1.14.0",
+    "cheerio": "^0.19.0",
+    "express": "4.8.0",
+    "falafel": "0.1.4",
+    "falafel-map": "0.3.2",
+    "html-minifier": "^0.8.0",
+    "http-proxy": "^1.8.1",
+    "https-proxy-agent": "^1.0.0",
+    "js-beautify": "^1.5.10",
+    "moment": "^2.10.6",
+    "redis": "^1.0.0",
+    "request": "^2.60.0",
+    "uglify-js": "^2.4.24",
+    "underscore": "^1.8.3",
+    "url": "^0.10.3"
+  },
+  "devDependencies": {
+    "tap": "0.4.x"
+  },
+  "keywords": [
+    "source",
+    "trace",
+    "instrumentation"
+  ],
+  "scripts": {
+    "test": "tap test/test-*.js",
+    "build-browser": "node build-browser.js"
+  },
+  "bin": {
+    "node-theseus": "./bin/fondue"
+  }
 }

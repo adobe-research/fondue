@@ -25,9 +25,11 @@
 var basename = require('path').basename;
 var falafel = require('falafel');
 var falafelMap = require('falafel-map');
-var eselector = require('esprima-selector');
-var helpers = require('falafel-helpers');
+var eselector = require('../esprima-selector');
+var helpers = require('../falafel-helpers');
 var fs = require('fs');
+var beautify_js = require('js-beautify');
+var UglifyJS = require('uglify-js');
 
 // adds keys from options to defaultOptions, overwriting on conflicts & returning defaultOptions
 function mergeInto(options, defaultOptions) {
@@ -182,6 +184,7 @@ function traceFilter(src, options) {
 
 	try {
 		var nodes = [];
+    var preNodes = {};
 		var functionSources = {};
 
 		// some code looks at the source code for callback functions and does
@@ -189,15 +192,55 @@ function traceFilter(src, options) {
 		// anonymous functions, we need to capture the original source code for
 		// those functions so that we can return it from the wrapper function's
 		// toString.
+
+    //TODO - Callbacks here are actually handlers, not async
 		falafel(src, { loc: true }, eselector.tester([
 			{
 				selector: '.function',
 				callback: function (node) {
 					var id = makeId('function', options.path, node.loc);
 					functionSources[id] = node.source();
-				},
+				}
 			}
 		]));
+
+    //
+    //falafel(src, { loc: true }, helpers.wrap(eselector.tester([
+		//	{
+		//		selector: 'program',
+		//		callback: function (node) {
+		//			var id = makeId('toplevel', options.path, node.loc);
+     //     node.originalSource = node.source() + " ";
+     //     preNodes[id] = node;
+		//		}
+		//	},
+		//	{
+		//		selector: '.function > block',
+		//		callback: function (node) {
+		//			var id = makeId('function', options.path, node.parent.loc);
+     //     node.originalSource = node.source() + " ";
+     //     preNodes[id] = node;
+		//		}
+		//	},
+		//	{
+		//		selector: 'expression.function',
+		//		callback: function (node) {
+		//			if (node.parent.type !== 'Property' || node.parent.kind === 'init') {
+     //       var id = makeId('function', options.path, node.loc);
+     //       node.originalSource = node.source() + " ";
+     //       preNodes[id] = node;
+		//			}
+		//		}
+		//	},
+		//	{
+		//		selector: '.call',
+		//		callback: function (node) {
+		//			var id = makeId('callsite', options.path, node.loc);
+     //     node.originalSource = node.source() + " ";
+     //     preNodes[id] = node;
+		//		}
+		//	}
+		//])));
 
 		// instrument the source code
 		var instrumentedSrc = falafel(src, { loc: true }, helpers.wrap(eselector.tester([
@@ -210,6 +253,7 @@ function traceFilter(src, options) {
 						start: node.loc.start,
 						end: node.loc.end,
 						id: id,
+            //originalSource:preNodes[id].originalSource,
 						type: 'toplevel',
 						name: '(' + basename(options.path) + ' toplevel)',
 					});
@@ -228,6 +272,7 @@ function traceFilter(src, options) {
 						start: node.parent.loc.start,
 						end: node.parent.loc.end,
 						id: id,
+            //originalSource:preNodes[id].originalSource,
 						type: 'function',
 						name: concoctFunctionName(node.parent),
 						params: params,
@@ -252,11 +297,12 @@ function traceFilter(src, options) {
 				callback: function (node) {
 					var id = makeId('callsite', options.path, node.loc);
 					var nameLoc = (node.callee.type === 'MemberExpression') ? node.callee.property.loc : node.callee.loc;
-					nodes.push({
+          nodes.push({
 						path: options.path,
 						start: node.loc.start,
 						end: node.loc.end,
 						id: id,
+            //originalSource:preNodes[id].originalSource,
 						type: 'callsite',
 						name: node.callee.source(),
 						nameStart: nameLoc.start,
@@ -277,6 +323,7 @@ function traceFilter(src, options) {
 							node.arguments[0].update(JSON.stringify(String(instrumentedEvalSource)))
 						}
 					} else if (node.callee.source() !== "require") {
+						//node.callee.originalSource = node.callee.source();
 						if (node.callee.type === 'MemberExpression') {
 							if (node.callee.computed) {
 								node.callee.update(' ', options.tracer_name, '.traceFunCall({ this: ', node.callee.object.source(), ', property: ', node.callee.property.source(), ', nodeId: ', JSON.stringify(id), ' })');
@@ -298,7 +345,9 @@ function traceFilter(src, options) {
 
 		return {
 			map: function () { return '' },
-			toString: function () { return prologue + instrumentedSrc },
+			toString: function () {
+        return prologue + instrumentedSrc
+      }
 		};
 
 		function traceEntry(node, nodeId, args) {
@@ -343,6 +392,61 @@ function instrument(src, options) {
 
 	var prefix = '', shebang = '', output, m;
 
+	try {
+		src = UglifyJS.minify(src, {
+			fromString: true,
+			warnings: true,
+			mangle: false,
+			compress: {
+				sequences: false,  // join consecutive statemets with the “comma operator”
+				properties: false,  // optimize property access: a["foo"] → a.foo
+				dead_code: false,  // discard unreachable code
+				drop_debugger: false,  // discard “debugger” statements
+				unsafe: false, // some unsafe optimizations (see below)
+				conditionals: false,  // optimize if-s and conditional expressions
+				comparisons: false,  // optimize comparisons
+				evaluate: false,  // evaluate constant expressions
+				booleans: false,  // optimize boolean expressions
+				loops: false,  // optimize loops
+				unused: false,  // drop unused variables/functions
+				hoist_funs: false,  // hoist function declarations
+				hoist_vars: false, // hoist variable declarations
+				if_return: false,  // optimize if-s followed by return/continue
+				join_vars: false,  // join var declarations
+				cascade: false,  // try to cascade `right` into `left` in sequences
+				side_effects: false,  // drop side-effect-free statements
+				warnings: true,  // warn about potentially dangerous optimizations/code
+				global_defs: {}     // global definitions
+			},
+			output: {
+				indent_start: 0,
+				indent_level: 2,
+				quote_keys: false,
+				space_colon: true,
+				ascii_only: false,
+				unescape_regexps: false,
+				inline_script: false,
+				width: 120,
+				max_line_len: 32000,
+				beautify: true,
+				source_map: null,
+				bracketize: false,
+				semicolons: false,
+				comments: true,
+				preserve_line: false,
+				screw_ie8: false,
+				preamble: null,
+				quote_style: 0
+			}
+		}).code;
+	} catch (ignored) {
+		console.log(options.path + ": Parse Error, No Trace Installed.")
+	}
+
+  if (options.noTheseus || options.path.indexOf("theseus=no") > -1) {
+    return src;
+	}
+
 	if (m = /^(#![^\n]+)\n/.exec(src)) {
 		shebang = m[1];
 		src = src.slice(shebang.length);
@@ -359,6 +463,11 @@ function instrument(src, options) {
 	if (src.indexOf("/*theseus" + " instrument: false */") !== -1) {
 		output = shebang + prefix + src;
 	} else {
+
+		try{
+
+		} catch (err){}
+
 		var m = traceFilter(src, {
 			prefix: prefix,
 			path: options.path,
